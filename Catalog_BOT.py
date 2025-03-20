@@ -124,7 +124,7 @@ def handle_message(event: MessageEvent):
     if "カタログ" in user_message or "catalog" in user_message:
         # 1～4の案内文 + フォームURL
         # ここではフォームページを /catalog_form で用意している想定
-        form_url = "https://yourdomain.com/catalog_form"
+        form_url = "https://catalog-bot-1.onrender.com/catalog_form"
 
         reply_text = (
             "【カタログ送付に関するご案内】\n\n"
