@@ -40,10 +40,6 @@ def get_gspread_client():
     if not SERVICE_ACCOUNT_FILE:
         raise ValueError("環境変数 GCP_SERVICE_ACCOUNT_JSON が設定されていません。")
 
-    # SERVICE_ACCOUNT_FILE がファイルパスの場合:
-    # with open(SERVICE_ACCOUNT_FILE, "r", encoding="utf-8") as f:
-    #     service_account_dict = json.load(f)
-
     # SERVICE_ACCOUNT_FILE がJSON文字列の場合 (Render等でSecretにJSONを直接登録するケース):
     service_account_dict = json.loads(SERVICE_ACCOUNT_FILE)
 
@@ -123,15 +119,15 @@ def handle_message(event: MessageEvent):
     # ユーザーが「カタログ」等のキーワードを送信したら案内を返す例
     if "カタログ" in user_message or "catalog" in user_message:
         # 1～4の案内文 + フォームURL
-        # ここではフォームページを /catalog_form で用意している想定
         form_url = "https://catalog-bot-1.onrender.com/catalog_form"
 
         reply_text = (
             "【カタログ送付に関するご案内】\n\n"
             "1. 無料請求応募方法について\n"
-            "PrintMediaのInstagramもしくはTikTokアカウントをフォローしてください。\n"
-            "Instagram: @printmedia19\n"
-            "TikTok: printmedia_19\n"
+            "InstagramまたはTikTokアカウントをフォローしてください。\n"
+            # クリックで飛べるようリンクに変更
+            "Instagram: https://www.instagram.com/printmedia19\n"
+            "TikTok: https://www.tiktok.com/@printmedia_19\n"
             "※カタログ送付数には限りがありますのでサブアカウントなど使用しての重複申し込みはご遠慮下さい。\n\n"
             "2. カタログ送付時期\n"
             "2025年4月6日〜4月8日に郵送でお送りします。\n\n"
@@ -161,61 +157,114 @@ def handle_message(event: MessageEvent):
 def show_catalog_form():
     """
     シンプルにHTMLを返すだけの例。
-    実運用ではテンプレートファイルを Jinja2 で利用してもOK。
+    ここで:
+      - レスポンシブ対応の <meta name="viewport">
+      - 郵便番号入力時に住所を自動取得するJS
+      - Insta/TikTokをクリックで飛べるリンク (案内文などに組み込む場合)
+    を組み込みます。
     """
     html_content = """
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
+    <!-- レスポンシブ対応: モバイル画面幅に合わせる -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>カタログ申し込みフォーム</title>
+    <style>
+        /* 画面いっぱいにフォームを広げたい場合など、適当にCSSを調整してください */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+        }
+        .container {
+            max-width: 600px; /* PCでは横幅600px程度に */
+            margin: 0 auto;
+            padding: 1em;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5em;
+        }
+        input[type=text], input[type=email], textarea {
+            width: 100%;
+            padding: 0.5em;
+            margin-top: 0.3em;
+            box-sizing: border-box;
+        }
+        input[type=submit] {
+            padding: 0.7em 1em;
+            font-size: 1em;
+            margin-top: 1em;
+        }
+    </style>
+    <script>
+    // 郵便番号から住所を自動入力するサンプル(日本用)
+    // https://zipaddress.net/ のAPIを利用
+    async function fetchAddress() {
+        const postalField = document.getElementById('postal_code');
+        const addressField = document.getElementById('address');
+        const postalCode = postalField.value.trim();
+
+        // 7桁以上(ハイフンなし)で処理
+        if (postalCode.length < 7) {
+            return; 
+        }
+        try {
+            const response = await fetch(`https://api.zipaddress.net/?zipcode=${postalCode}`);
+            const data = await response.json();
+            if (data.code === 200) {
+                // 住所フィールドに自動入力
+                addressField.value = data.data.fullAddress;
+            }
+        } catch (error) {
+            console.log("住所検索失敗:", error);
+        }
+    }
+    </script>
 </head>
 <body>
-    <h1>カタログ申し込みフォーム</h1>
-    <p>以下の項目をご記入の上、送信してください。</p>
-    <form action="/submit_form" method="post">
-        <label>氏名（必須）:<br>
-            <input type="text" name="name" required>
-        </label>
-        <br><br>
+    <div class="container">
+      <h1>カタログ申し込みフォーム</h1>
+      <p>以下の項目をご記入の上、送信してください。</p>
+      <form action="/submit_form" method="post">
+          <label>氏名（必須）:
+              <input type="text" name="name" required>
+          </label>
 
-        <label>郵便番号（必須）:<br>
-            <input type="text" name="postal_code" required>
-        </label>
-        <br><br>
+          <label>郵便番号（必須）:
+              <!-- onkeyup等でリアルタイムに取得する例 -->
+              <input type="text" name="postal_code" id="postal_code" onkeyup="fetchAddress()" required>
+          </label>
 
-        <label>住所（必須）:<br>
-            <input type="text" name="address" required>
-        </label>
-        <br><br>
+          <label>住所（必須）:
+              <input type="text" name="address" id="address" required>
+          </label>
 
-        <label>電話番号（必須）:<br>
-            <input type="text" name="phone" required>
-        </label>
-        <br><br>
+          <label>電話番号（必須）:
+              <input type="text" name="phone" required>
+          </label>
 
-        <label>メールアドレス（必須）:<br>
-            <input type="email" name="email" required>
-        </label>
-        <br><br>
+          <label>メールアドレス（必須）:
+              <input type="email" name="email" required>
+          </label>
 
-        <label>Insta・TikTok名（必須）:<br>
-            <input type="text" name="sns_account" required>
-        </label>
-        <br><br>
+          <label>Insta・TikTok名（必須）:
+              <input type="text" name="sns_account" required>
+          </label>
 
-        <label>2025年度に在籍予定の学校名と学年（未記入可）:<br>
-            <input type="text" name="school_grade">
-        </label>
-        <br><br>
+          <label>2025年度に在籍予定の学校名と学年（未記入可）:
+              <input type="text" name="school_grade">
+          </label>
 
-        <label>その他（質問やご要望など）:<br>
-            <textarea name="other" rows="4"></textarea>
-        </label>
-        <br><br>
+          <label>その他（質問やご要望など）:
+              <textarea name="other" rows="4"></textarea>
+          </label>
 
-        <input type="submit" value="送信">
-    </form>
+          <input type="submit" value="送信">
+      </form>
+    </div>
 </body>
 </html>
 """
@@ -260,6 +309,4 @@ def health_check():
 # アプリ起動(ローカル開発時)
 # -----------------------
 if __name__ == "__main__":
-    # ポート番号は必要に応じて変更
     app.run(host="0.0.0.0", port=5000, debug=True)
-
