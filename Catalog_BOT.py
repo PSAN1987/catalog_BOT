@@ -155,14 +155,6 @@ def handle_message(event: MessageEvent):
 # -----------------------
 @app.route("/catalog_form", methods=["GET"])
 def show_catalog_form():
-    """
-    シンプルにHTMLを返すだけの例。
-    ここで:
-      - レスポンシブ対応の <meta name="viewport">
-      - 郵便番号入力時に住所を自動取得するJS
-      - Insta/TikTokをクリックで飛べるリンク (案内文などに組み込む場合)
-    を組み込みます。
-    """
     html_content = """
 <!DOCTYPE html>
 <html>
@@ -172,7 +164,6 @@ def show_catalog_form():
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>カタログ申し込みフォーム</title>
     <style>
-        /* 画面いっぱいにフォームを広げたい場合など、適当にCSSを調整してください */
         body {
             margin: 0;
             padding: 0;
@@ -201,22 +192,21 @@ def show_catalog_form():
     </style>
     <script>
     // 郵便番号から住所を自動入力するサンプル(日本用)
-    // https://zipaddress.net/ のAPIを利用
     async function fetchAddress() {
-        const postalField = document.getElementById('postal_code');
-        const addressField = document.getElementById('address');
-        const postalCode = postalField.value.trim();
-
-        // 7桁以上(ハイフンなし)で処理
-        if (postalCode.length < 7) {
-            return; 
+        let pcRaw = document.getElementById('postal_code').value.trim();
+        // ハイフンがあったら除去する
+        pcRaw = pcRaw.replace('-', '');
+        
+        // 7桁未満の場合は処理しない
+        if (pcRaw.length < 7) {
+            return;
         }
         try {
-            const response = await fetch(`https://api.zipaddress.net/?zipcode=${postalCode}`);
+            const response = await fetch(`https://api.zipaddress.net/?zipcode=${pcRaw}`);
             const data = await response.json();
             if (data.code === 200) {
                 // 住所フィールドに自動入力
-                addressField.value = data.data.fullAddress;
+                document.getElementById('address').value = data.data.fullAddress;
             }
         } catch (error) {
             console.log("住所検索失敗:", error);
@@ -233,8 +223,8 @@ def show_catalog_form():
               <input type="text" name="name" required>
           </label>
 
-          <label>郵便番号（必須）:
-              <!-- onkeyup等でリアルタイムに取得する例 -->
+          <label>郵便番号（必須）:<br>
+              <small>※ブラウザアプリからアクセス時、ハイフン無し7桁で入力すると自動で住所を補完します。</small><br>
               <input type="text" name="postal_code" id="postal_code" onkeyup="fetchAddress()" required>
           </label>
 
