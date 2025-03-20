@@ -30,22 +30,18 @@ line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 # -----------------------
-# Google Sheets 接続
+# Google Sheets クライアントの初期化
 # -----------------------
 def get_gspread_client():
     """
-    環境変数 SERVICE_ACCOUNT_FILE (JSONパス or JSON文字列) から認証情報を取り出し、
-    gspread クライアントを返す
+    Secret Filesによるサービスアカウントファイルを読み込み、
+    Googleスプレッドシートにアクセス可能なクライアントを返す
     """
     if not SERVICE_ACCOUNT_FILE:
         raise ValueError("環境変数 GCP_SERVICE_ACCOUNT_JSON が設定されていません。")
 
-    # SERVICE_ACCOUNT_FILE がファイルパスの場合:
-    # with open(SERVICE_ACCOUNT_FILE, "r", encoding="utf-8") as f:
-    #     service_account_dict = json.load(f)
-
-    # SERVICE_ACCOUNT_FILE がJSON文字列の場合 (Render等でSecretにJSONを直接登録するケース):
-    service_account_dict = json.loads(SERVICE_ACCOUNT_FILE)
+    with open(SERVICE_ACCOUNT_FILE, "r", encoding="utf-8") as f:
+        service_account_dict = json.load(f)
 
     scope = [
         "https://spreadsheets.google.com/feeds",
@@ -53,7 +49,8 @@ def get_gspread_client():
         "https://www.googleapis.com/auth/drive",
     ]
     credentials = ServiceAccountCredentials.from_json_keyfile_dict(service_account_dict, scope)
-    return gspread.authorize(credentials)
+    gc = gspread.authorize(credentials)
+    return gc
 
 def get_or_create_worksheet(sheet, title):
     """
