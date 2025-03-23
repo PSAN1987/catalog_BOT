@@ -47,6 +47,7 @@ def get_gspread_client():
     credentials = ServiceAccountCredentials.from_json_keyfile_dict(service_account_dict, scope)
     return gspread.authorize(credentials)
 
+
 def get_or_create_worksheet(sheet, title):
     """
     スプレッドシート内で該当titleのワークシートを取得。
@@ -71,6 +72,7 @@ def get_or_create_worksheet(sheet, title):
                 "合計金額", "単価"
             ]])
     return ws
+
 
 def write_to_spreadsheet_for_catalog(form_data: dict):
     """
@@ -98,37 +100,15 @@ def write_to_spreadsheet_for_catalog(form_data: dict):
 # -----------------------
 
 # 下記のように、商品・割引区分・枚数レンジ・価格をまとめた辞書を作成します。
-# （実際には非常に行数が多いので、一部例示とし、全量を入れるかどうかは運用次第です）
-# ここではフルで入れてみますが、本番環境では外部CSVなどにして読み込むのがおすすめです。
-
+# ユーザー様が提供された全データをここに入れてください。
 PRICE_TABLE = [
     # 商品名, MinQty, MaxQty, DiscountType, UnitPrice, プリント位置追加, 色数追加, フルカラー追加, ネーム&背番号セット, ネーム(大), 番号(大)
-    # ドライTシャツ
     {"item":"ドライTシャツ","min_qty":10,"max_qty":14,"discount_type":"早割","unit_price":1830,"pos_add":850,"color_add":850,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
     {"item":"ドライTシャツ","min_qty":10,"max_qty":14,"discount_type":"通常","unit_price":2030,"pos_add":850,"color_add":850,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    {"item":"ドライTシャツ","min_qty":15,"max_qty":19,"discount_type":"早割","unit_price":1470,"pos_add":650,"color_add":650,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    {"item":"ドライTシャツ","min_qty":15,"max_qty":19,"discount_type":"通常","unit_price":1670,"pos_add":650,"color_add":650,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    {"item":"ドライTシャツ","min_qty":20,"max_qty":29,"discount_type":"早割","unit_price":1230,"pos_add":450,"color_add":450,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    {"item":"ドライTシャツ","min_qty":20,"max_qty":29,"discount_type":"通常","unit_price":1430,"pos_add":450,"color_add":450,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    {"item":"ドライTシャツ","min_qty":30,"max_qty":39,"discount_type":"早割","unit_price":1060,"pos_add":350,"color_add":350,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    {"item":"ドライTシャツ","min_qty":30,"max_qty":39,"discount_type":"通常","unit_price":1260,"pos_add":350,"color_add":350,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    {"item":"ドライTシャツ","min_qty":40,"max_qty":49,"discount_type":"早割","unit_price":980,"pos_add":350,"color_add":350,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    {"item":"ドライTシャツ","min_qty":40,"max_qty":49,"discount_type":"通常","unit_price":1180,"pos_add":350,"color_add":350,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    {"item":"ドライTシャツ","min_qty":50,"max_qty":99,"discount_type":"早割","unit_price":890,"pos_add":350,"color_add":350,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    {"item":"ドライTシャツ","min_qty":50,"max_qty":99,"discount_type":"通常","unit_price":1090,"pos_add":350,"color_add":350,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    {"item":"ドライTシャツ","min_qty":100,"max_qty":500,"discount_type":"早割","unit_price":770,"pos_add":300,"color_add":300,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    {"item":"ドライTシャツ","min_qty":100,"max_qty":500,"discount_type":"通常","unit_price":970,"pos_add":300,"color_add":300,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    # ヘビーウェイトTシャツ
-    {"item":"ヘビーウェイトTシャツ","min_qty":10,"max_qty":14,"discount_type":"早割","unit_price":1970,"pos_add":850,"color_add":850,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    {"item":"ヘビーウェイトTシャツ","min_qty":10,"max_qty":14,"discount_type":"通常","unit_price":2170,"pos_add":850,"color_add":850,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    {"item":"ヘビーウェイトTシャツ","min_qty":15,"max_qty":19,"discount_type":"早割","unit_price":1610,"pos_add":650,"color_add":650,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    {"item":"ヘビーウェイトTシャツ","min_qty":15,"max_qty":19,"discount_type":"通常","unit_price":1810,"pos_add":650,"color_add":650,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    # ... （以下、同様に全商品・全枚数レンジの行を埋める）
-    # ここでは省略のため、全商品分を貼り付けると非常に長くなるため、一部を例示。
-    # 実際にはユーザ提供の全テーブルを同様の形式でPRICE_TABLEに入れてください。
+    # ...以下省略。同様にすべての行を追加...
 ]
 
-# 追加料金の判定ロジック（色数）: ここでは「キー文字列 -> (色数追加の回数, フルカラー追加の回数)」で定義
+# 追加料金の判定ロジック（色数）
 COLOR_COST_MAP = {
     "前 or 背中 1色": (0, 0),
     "前 or 背中 2色": (1, 0),
@@ -140,8 +120,7 @@ COLOR_COST_MAP = {
     "前と背中 フルカラー": (0, 2),
 }
 
-
-# ユーザの見積フロー管理用
+# ユーザの見積フロー管理用（簡易セッション）
 user_estimate_sessions = {}  # { user_id: {"step": n, "answers": {...}} }
 
 
@@ -156,7 +135,8 @@ def write_estimate_to_spreadsheet(user_id, estimate_data, total_price, unit_pric
     # 見積番号を生成（例: UNIX時間）
     quote_number = str(int(time.time()))
 
-    # A列から順に: 日時, 見積番号, ユーザーID, 使用日(割引区分), 予算, 商品名, 枚数, プリント位置, 色数, 背ネーム, 合計金額, 単価
+    # A列から順に: 日時, 見積番号, ユーザーID,
+    #               使用日(割引区分), 予算, 商品名, 枚数, プリント位置, 色数, 背ネーム, 合計金額, 単価
     new_row = [
         time.strftime("%Y/%m/%d %H:%M:%S"),    # 日時
         quote_number,                          # 見積番号
@@ -187,6 +167,7 @@ def find_price_row(item_name, discount_type, quantity):
             and row["min_qty"] <= quantity <= row["max_qty"]):
             return row
     return None
+
 
 def calculate_estimate(estimate_data):
     """
@@ -225,6 +206,7 @@ def calculate_estimate(estimate_data):
     color_fee = color_add_count * row["color_add"] + fullcolor_add_count * row["fullcolor_add"]
 
     # 背ネーム
+    # 「背ネーム・番号を使わない」の場合は0
     if back_name == "ネーム&背番号セット":
         back_name_fee = row["set_name_num"]
     elif back_name == "ネーム(大)":
@@ -232,6 +214,7 @@ def calculate_estimate(estimate_data):
     elif back_name == "番号(大)":
         back_name_fee = row["big_num"]
     else:
+        # 背ネーム・番号を使わない → 0円
         back_name_fee = 0
 
     # 1枚あたりの価格
@@ -240,31 +223,38 @@ def calculate_estimate(estimate_data):
 
     return total_price, unit_price
 
-
 # -----------------------
 # Flex Message作成ヘルパー
 # -----------------------
 def flex_usage_date():
     """
-    使用日の質問（14日前以上 or 14日前以内）用のFlexメッセージ
+    1) 使用日の質問（14日前以上 or 14日前以内）
     """
     flex_body = {
       "type": "bubble",
       "hero": {
+        "type": "text",
+        "text": "【使用日】",
+        "weight": "bold",
+        "size": "lg",
+        "align": "center"
+      },
+      "body": {
         "type": "box",
         "layout": "vertical",
         "contents": [
           {
             "type": "text",
-            "text": "【使用日】",
-            "weight": "bold",
-            "size": "lg"
+            "text": "大会やイベントで使用する日程を教えてください。",
+            "wrap": True,
+            "size": "md"
           },
           {
             "type": "text",
-            "text": "大会やイベントで使用する日程を教えてください\n(印刷開始14日前以上なら早割)",
+            "text": "印刷開始日から14日以上あれば“14日前以上”、\n14日以内なら“14日前以内”を選択してください。",
+            "wrap": True,
             "size": "sm",
-            "wrap": True
+            "margin": "md"
           }
         ]
       },
@@ -293,15 +283,15 @@ def flex_usage_date():
               "text": "14日前以内"
             }
           }
-        ],
-        "flex": 0
+        ]
       }
     }
     return FlexSendMessage(alt_text="使用日を選択してください", contents=flex_body)
 
+
 def flex_budget():
     """
-    1枚当たりの予算選択用
+    2) 1枚当たりの予算選択
     """
     budgets = ["1,000円", "2,000円", "3,000円", "4,000円", "5,000円"]
     buttons = []
@@ -323,28 +313,34 @@ def flex_budget():
         "type": "text",
         "text": "【1枚あたりの予算】",
         "weight": "bold",
-        "size": "lg"
+        "size": "lg",
+        "align": "center"
       },
       "body": {
         "type": "box",
         "layout": "vertical",
         "contents": [
-          {"type": "text", "text": "希望の1枚あたりの予算を選んでください", "wrap": True}
+          {
+            "type": "text",
+            "text": "ご希望の1枚あたりの予算を選択してください。",
+            "wrap": True,
+            "size": "md"
+          }
         ]
       },
       "footer": {
         "type": "box",
         "layout": "vertical",
         "spacing": "sm",
-        "contents": buttons,
-        "flex": 0
+        "contents": buttons
       }
     }
     return FlexSendMessage(alt_text="予算を選択してください", contents=flex_body)
 
+
 def flex_item_select():
     """
-    商品名選択用(ここではcarouselで13種類を一覧表示)
+    3) 商品名選択用
     """
     items = [
         "ドライTシャツ","ヘビーウェイトTシャツ","ドライポロシャツ","ドライメッシュビブス",
@@ -354,8 +350,6 @@ def flex_item_select():
         "ジップアップライトパーカー"
     ]
 
-    # 1バブル最大12ボタン制限があるため、ここではCarouselで分割
-    # 分割ロジック例: 1バブル5種ずつ表示
     item_bubbles = []
     chunk_size = 5
     for i in range(0, len(items), chunk_size):
@@ -378,13 +372,19 @@ def flex_item_select():
             "type": "text",
             "text": "【商品名】",
             "weight": "bold",
-            "size": "lg"
+            "size": "lg",
+            "align": "center"
           },
           "body": {
             "type": "box",
             "layout": "vertical",
             "contents": [
-              {"type": "text", "text": "ご希望の商品を選択してください", "wrap": True}
+              {
+                "type": "text",
+                "text": "ご希望の商品を選択してください。",
+                "wrap": True,
+                "size": "md"
+              }
             ]
           },
           "footer": {
@@ -403,9 +403,10 @@ def flex_item_select():
 
     return FlexSendMessage(alt_text="商品名を選択してください", contents=carousel)
 
+
 def flex_quantity():
     """
-    必要枚数を10, 20, 30, 40, 50以上 から選択
+    4) 必要枚数を10,20,30,40,50以上から選択
     """
     quantities = ["10", "20", "30", "40", "50以上"]
     buttons = []
@@ -426,13 +427,26 @@ def flex_quantity():
         "type": "text",
         "text": "【枚数】",
         "weight": "bold",
-        "size": "lg"
+        "size": "lg",
+        "align": "center"
       },
       "body": {
         "type": "box",
         "layout": "vertical",
         "contents": [
-          {"type": "text", "text": "何枚ご入り用ですか？", "wrap": True}
+          {
+            "type": "text",
+            "text": "必要な枚数を選択してください。",
+            "wrap": True,
+            "size": "md"
+          },
+          {
+            "type": "text",
+            "text": "「50以上」を選ぶと一律で100枚として計算されます。",
+            "wrap": True,
+            "size": "sm",
+            "margin": "md"
+          }
         ]
       },
       "footer": {
@@ -444,9 +458,10 @@ def flex_quantity():
     }
     return FlexSendMessage(alt_text="必要枚数を選択してください", contents=flex_body)
 
+
 def flex_print_position():
     """
-    プリント位置 (前のみ / 背中のみ / 前と背中)
+    5) プリント位置 (前のみ / 背中のみ / 前と背中)
     """
     positions = ["前のみ", "背中のみ", "前と背中"]
     buttons = []
@@ -467,7 +482,27 @@ def flex_print_position():
         "type": "text",
         "text": "【プリント位置】",
         "weight": "bold",
-        "size": "lg"
+        "size": "lg",
+        "align": "center"
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "contents": [
+          {
+            "type": "text",
+            "text": "プリントを入れる場所を選択してください。",
+            "wrap": True,
+            "size": "md"
+          },
+          {
+            "type": "text",
+            "text": "複数箇所の場合は追加料金が発生します。",
+            "wrap": True,
+            "size": "sm",
+            "margin": "md"
+          }
+        ]
       },
       "footer": {
         "type": "box",
@@ -478,9 +513,10 @@ def flex_print_position():
     }
     return FlexSendMessage(alt_text="プリント位置を選択してください", contents=flex_body)
 
+
 def flex_color_count():
     """
-    色数 (8パターン) の選択
+    6) 色数 (全8パターン)
     """
     color_list = [
         "前 or 背中 1色",
@@ -492,7 +528,6 @@ def flex_color_count():
         "前と背中 前2色 背中2色",
         "前と背中 フルカラー",
     ]
-    # 分割などしてCarouselにする
     color_bubbles = []
     chunk_size = 4
     for i in range(0, len(color_list), chunk_size):
@@ -505,7 +540,8 @@ def flex_color_count():
                 "height": "sm",
                 "action": {
                     "type": "message",
-                    "label": c[:12],  # ラベルが長くなるので適宜短縮
+                    # ボタンラベルが長いと崩れるので少し短めに
+                    "label": c[:12],  
                     "text": c
                 }
             })
@@ -515,7 +551,20 @@ def flex_color_count():
             "type": "text",
             "text": "【色数】",
             "weight": "bold",
-            "size": "md"
+            "size": "lg",
+            "align": "center"
+          },
+          "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              {
+                "type": "text",
+                "text": "プリント色数を選択してください。\n(色数追加料金が変わります)",
+                "wrap": True,
+                "size": "sm"
+              }
+            ]
           },
           "footer": {
             "type": "box",
@@ -532,11 +581,13 @@ def flex_color_count():
     }
     return FlexSendMessage(alt_text="色数を選択してください", contents=carousel)
 
+
 def flex_back_name():
     """
-    背ネーム (ネーム&背番号セット / ネーム(大) / 番号(大))
+    7) 背ネーム
+    ネーム&背番号セット / ネーム(大) / 番号(大) / 背ネーム・番号を使わない
     """
-    names = ["ネーム&背番号セット", "ネーム(大)", "番号(大)"]
+    names = ["ネーム&背番号セット", "ネーム(大)", "番号(大)", "背ネーム・番号を使わない"]
     buttons = []
     for nm in names:
         buttons.append({
@@ -555,7 +606,27 @@ def flex_back_name():
         "type": "text",
         "text": "【背ネーム】",
         "weight": "bold",
-        "size": "lg"
+        "size": "lg",
+        "align": "center"
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "contents": [
+          {
+            "type": "text",
+            "text": "背ネームや番号を入れる場合は選択してください。",
+            "wrap": True,
+            "size": "md"
+          },
+          {
+            "type": "text",
+            "text": "不要な場合は「背ネーム・番号を使わない」を選択してください。",
+            "wrap": True,
+            "size": "sm",
+            "margin": "md"
+          }
+        ]
       },
       "footer": {
         "type": "box",
@@ -581,6 +652,7 @@ def line_callback():
 
     return "OK", 200
 
+
 # -----------------------
 # 2) LINE上でメッセージ受信時
 # -----------------------
@@ -589,13 +661,13 @@ def handle_message(event: MessageEvent):
     user_id = event.source.user_id
     user_message = event.message.text.strip()
 
-    # まずは「見積り」フロー中かどうか確認
+    # まずは「見積り」フロー中かどうか
     if user_id in user_estimate_sessions and user_estimate_sessions[user_id]["step"] > 0:
-        # すでに見積りフロー中
+        # 見積りフロー中
         process_estimate_flow(event, user_message)
         return
 
-    # 見積りフローを開始するかチェック
+    # 見積りフロー開始
     if user_message == "見積り":
         start_estimate_flow(event)
         return
@@ -623,8 +695,8 @@ def send_catalog_info(event: MessageEvent):
         "InstagramまたはTikTokアカウントをフォローしてください。\n"
         "Instagram: https://www.instagram.com/printmedia19\n"
         "TikTok: https://www.tiktok.com/@printmedia_19\n"
-        "※カタログ送付数には限りがありますのでサブアカウントなど\n"
-        "　使用しての重複申し込みはご遠慮下さい。\n\n"
+        "※カタログ送付数には限りがありますので\n"
+        "　サブアカウントなど使用しての重複申し込みはご遠慮下さい。\n\n"
         "2. カタログ送付時期\n"
         "2025年4月6日〜4月8日に郵送でお送りします。\n\n"
         "3. 配布数について\n"
@@ -638,9 +710,7 @@ def send_catalog_info(event: MessageEvent):
         TextSendMessage(text=reply_text)
     )
 
-# -----------------------
-# 見積りフロー管理
-# -----------------------
+
 def start_estimate_flow(event: MessageEvent):
     """
     見積りフローの最初のステップを開始
@@ -656,6 +726,7 @@ def start_estimate_flow(event: MessageEvent):
         flex_usage_date()
     )
 
+
 def process_estimate_flow(event: MessageEvent, user_message: str):
     """
     見積りフロー中のユーザの回答を処理して、次のステップを送る
@@ -665,15 +736,11 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
     step = session_data["step"]
 
     if step == 1:
-        # 回答: 使用日
-        # "14日前以上" / "14日前以内"
+        # 回答: 使用日 ("14日前以上" / "14日前以内")
         if user_message in ["14日前以上", "14日前以内"]:
             session_data["answers"]["usage_date"] = user_message
-            # 割引区分設定
-            if user_message == "14日前以上":
-                session_data["answers"]["discount_type"] = "早割"
-            else:
-                session_data["answers"]["discount_type"] = "通常"
+            # 割引区分
+            session_data["answers"]["discount_type"] = "早割" if user_message == "14日前以上" else "通常"
             session_data["step"] = 2
 
             # 次の質問: 予算
@@ -682,7 +749,6 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
                 flex_budget()
             )
         else:
-            # 不正入力の場合は聞き直し
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="「14日前以上」または「14日前以内」を選択してください。")
@@ -694,7 +760,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
         if user_message in budgets:
             session_data["answers"]["budget"] = user_message
             session_data["step"] = 3
-            # 次の質問: 商品名
+            # 次: 商品名
             line_bot_api.reply_message(
                 event.reply_token,
                 flex_item_select()
@@ -702,11 +768,11 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
         else:
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="1枚あたりの予算をボタンから選択してください。")
+                TextSendMessage(text="ボタンから1枚あたりの予算を選択してください。")
             )
 
     elif step == 3:
-        # 回答: 商品名
+        # 商品名
         items = [
             "ドライTシャツ","ヘビーウェイトTシャツ","ドライポロシャツ","ドライメッシュビブス",
             "ドライベースボールシャツ","ドライロングスリープTシャツ","ドライハーフパンツ",
@@ -732,9 +798,8 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
         # 枚数
         valid_choices = ["10","20","30","40","50以上"]
         if user_message in valid_choices:
-            # 実際の数量
             if user_message == "50以上":
-                # ここでは仮に100とする (あるいは実際のやり取りでユーザに入力してもらってもよい)
+                # 一律で100枚で計算する例
                 session_data["answers"]["quantity"] = "100"
             else:
                 session_data["answers"]["quantity"] = user_message
@@ -787,7 +852,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
 
     elif step == 7:
         # 背ネーム
-        valid_back_names = ["ネーム&背番号セット", "ネーム(大)", "番号(大)"]
+        valid_back_names = ["ネーム&背番号セット", "ネーム(大)", "番号(大)", "背ネーム・番号を使わない"]
         if user_message in valid_back_names:
             session_data["answers"]["back_name"] = user_message
             # これで回答が出揃った
@@ -967,12 +1032,14 @@ def submit_catalog_form():
 
     return "フォーム送信ありがとうございました！ カタログ送付をお待ちください。", 200
 
+
 # -----------------------
 # 動作確認用
 # -----------------------
 @app.route("/", methods=["GET"])
 def health_check():
     return "LINE Bot is running.", 200
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
