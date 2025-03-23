@@ -390,68 +390,67 @@ def calculate_estimate(estimate_data):
     return total_price, unit_price
 
 
-# -----------------------
-# Flex Message作成 (タイトル修正 & 選択肢修正)
-# -----------------------
+from linebot.models import FlexSendMessage
+
 def flex_usage_date():
     """
-    1.使用日 (14日前以上 or 14日前以内)
+    ❶使用日 (14日前以上 or 14日前以内)
     """
     flex_body = {
-      "type": "bubble",
-      "hero": {
-        "type": "box",
-        "layout": "vertical",
-        "contents": [
-          {
-            "type": "text",
-            "text": "1.使用日",
-            "weight": "bold",
-            "size": "lg"
-          },
-          {
-            "type": "text",
-            "text": "大会やイベントで使用する日程を教えてください。\n(印刷開始14日前以上なら早割)",
-            "size": "sm",
-            "wrap": True
-          }
-        ]
-      },
-      "footer": {
-        "type": "box",
-        "layout": "vertical",
-        "spacing": "sm",
-        "contents": [
-          {
-            "type": "button",
-            "style": "primary",
-            "height": "sm",
-            "action": {
-              "type": "message",
-              "label": "14日前以上",
-              "text": "14日前以上"
-            }
-          },
-          {
-            "type": "button",
-            "style": "primary",
-            "height": "sm",
-            "action": {
-              "type": "message",
-              "label": "14日前以内",
-              "text": "14日前以内"
-            }
-          }
-        ],
-        "flex": 0
-      }
+        "type": "bubble",
+        "hero": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "❶使用日",
+                    "weight": "bold",
+                    "size": "lg"
+                },
+                {
+                    "type": "text",
+                    "text": "大会やイベントで使用する日程を教えてください。\n(印刷開始14日前以上なら早割)",
+                    "size": "sm",
+                    "wrap": True
+                }
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": [
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "height": "sm",
+                    "action": {
+                        "type": "message",
+                        "label": "14日前以上",
+                        "text": "14日前以上"
+                    }
+                },
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "height": "sm",
+                    "action": {
+                        "type": "message",
+                        "label": "14日前以内",
+                        "text": "14日前以内"
+                    }
+                }
+            ],
+            "flex": 0
+        }
     }
     return FlexSendMessage(alt_text="使用日を選択してください", contents=flex_body)
 
 
 def flex_budget():
     """
-    2.1枚当たりの予算
+    ❷1枚当たりの予算
     """
     budgets = ["1,000円", "2,000円", "3,000円", "4,000円", "5,000円"]
     buttons = []
@@ -468,34 +467,39 @@ def flex_budget():
         })
 
     flex_body = {
-      "type": "bubble",
-      "hero": {
-        "type": "text",
-        "text": "2.1枚当たりの予算",
-        "weight": "bold",
-        "size": "lg"
-      },
-      "body": {
-        "type": "box",
-        "layout": "vertical",
-        "contents": [
-          {"type": "text", "text": "ご希望の1枚あたり予算を選択してください。", "wrap": True}
-        ]
-      },
-      "footer": {
-        "type": "box",
-        "layout": "vertical",
-        "spacing": "sm",
-        "contents": buttons,
-        "flex": 0
-      }
+        "type": "bubble",
+        "hero": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "❷1枚当たりの予算",
+                    "weight": "bold",
+                    "size": "lg"
+                },
+                {
+                    "type": "text",
+                    "text": "ご希望の1枚あたり予算を選択してください。",
+                    "size": "sm",
+                    "wrap": True
+                }
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": buttons,
+            "flex": 0
+        }
     }
     return FlexSendMessage(alt_text="予算を選択してください", contents=flex_body)
 
 
 def flex_item_select():
     """
-    3.商品名
+    ❸商品名
     """
     items = [
         "ドライTシャツ","ヘビーウェイトTシャツ","ドライポロシャツ","ドライメッシュビブス",
@@ -508,9 +512,9 @@ def flex_item_select():
     item_bubbles = []
     chunk_size = 5
     for i in range(0, len(items), chunk_size):
-        chunk = items[i:i+chunk_size]
+        chunk_part = items[i:i+chunk_size]
         buttons = []
-        for it in chunk:
+        for it in chunk_part:
             buttons.append({
                 "type": "button",
                 "style": "primary",
@@ -522,26 +526,31 @@ def flex_item_select():
                 }
             })
         bubble = {
-          "type": "bubble",
-          "hero": {
-            "type": "text",
-            "text": "3.商品名",
-            "weight": "bold",
-            "size": "lg"
-          },
-          "body": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-              {"type": "text", "text": "ご希望の商品を選択してください。", "wrap": True}
-            ]
-          },
-          "footer": {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "sm",
-            "contents": buttons
-          }
+            "type": "bubble",
+            "hero": {
+                "type": "text",
+                "text": "❸商品名",
+                "weight": "bold",
+                "size": "lg"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "ご希望の商品を選択してください。",
+                        "size": "sm",
+                        "wrap": True
+                    }
+                ]
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "sm",
+                "contents": buttons
+            }
         }
         item_bubbles.append(bubble)
 
@@ -555,9 +564,8 @@ def flex_item_select():
 
 def flex_quantity():
     """
-    4.枚数
+    ❹枚数
     """
-    # ★修正： '50以上' をなくして、代わりに '50', '100' を追加。
     quantities = ["10", "20", "30", "40", "50", "100"]
     buttons = []
     for q in quantities:
@@ -571,36 +579,40 @@ def flex_quantity():
                 "text": q
             }
         })
+
     flex_body = {
-      "type": "bubble",
-      "hero": {
-        "type": "text",
-        "text": "4.枚数",
-        "weight": "bold",
-        "size": "lg"
-      },
-      "body": {
-        "type": "box",
-        "layout": "vertical",
-        "contents": [
-          # ★説明文も修正し、「50以上」という表記を削除
-          {"type": "text", "text": "必要枚数を選択してください。", "wrap": True},
-          {"type": "text", "text": "「50」または「100」枚を選ぶことでPRICE TABLEを網羅できます。", "wrap": True, "size": "sm"}
-        ]
-      },
-      "footer": {
-        "type": "box",
-        "layout": "vertical",
-        "spacing": "sm",
-        "contents": buttons
-      }
+        "type": "bubble",
+        "hero": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "❹枚数",
+                    "weight": "bold",
+                    "size": "lg"
+                },
+                {
+                    "type": "text",
+                    "text": "必要枚数を選択してください。",
+                    "size": "sm",
+                    "wrap": True
+                },
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": buttons
+        }
     }
     return FlexSendMessage(alt_text="必要枚数を選択してください", contents=flex_body)
 
 
 def flex_print_position():
     """
-    5.プリント位置
+    ❺プリント位置
     """
     positions = ["前のみ", "背中のみ", "前と背中"]
     buttons = []
@@ -615,74 +627,93 @@ def flex_print_position():
                 "text": pos
             }
         })
+
     flex_body = {
-      "type": "bubble",
-      "hero": {
-        "type": "text",
-        "text": "5.プリント位置",
-        "weight": "bold",
-        "size": "lg"
-      },
-      "body": {
-        "type": "box",
-        "layout": "vertical",
-        "contents": [
-          {"type": "text", "text": "プリントを入れる箇所を選択してください。", "wrap": True}
-        ]
-      },
-      "footer": {
-        "type": "box",
-        "layout": "vertical",
-        "spacing": "sm",
-        "contents": buttons
-      }
+        "type": "bubble",
+        "hero": {
+            "type": "text",
+            "text": "❺プリント位置",
+            "weight": "bold",
+            "size": "lg"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "プリントを入れる箇所を選択してください。",
+                    "size": "sm",
+                    "wrap": True
+                }
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": buttons
+        }
     }
     return FlexSendMessage(alt_text="プリント位置を選択してください", contents=flex_body)
 
 
 def flex_color_count():
     """
-    6.色数
+    ❻色数
     """
-    color_list = list(COLOR_COST_MAP.keys())  # 8パターン
+    color_list = [
+        "前 or 背中 1色",
+        "前 or 背中 2色",
+        "前 or 背中 フルカラー",
+        "前と背中 前1色 背中1色",
+        "前と背中 前2色 背中1色",
+        "前と背中 前1色 背中2色",
+        "前と背中 前2色 背中2色",
+        "前と背中 フルカラー",
+    ]
     chunk_size = 4
     color_bubbles = []
     for i in range(0, len(color_list), chunk_size):
-        chunk = color_list[i:i+chunk_size]
+        chunk_part = color_list[i:i+chunk_size]
         buttons = []
-        for c in chunk:
+        for c in chunk_part:
             buttons.append({
                 "type": "button",
                 "style": "primary",
                 "height": "sm",
                 "action": {
                     "type": "message",
-                    # ラベルが長い場合は一部省略
-                    "label": c[:12],
+                    "label": c[:12],  # ラベルが長くなる場合の対策
                     "text": c
                 }
             })
         bubble = {
-          "type": "bubble",
-          "hero": {
-            "type": "text",
-            "text": "6.色数",
-            "weight": "bold",
-            "size": "lg"
-          },
-          "body": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-              {"type": "text", "text": "プリントの色数を選択してください。", "wrap": True}
-            ]
-          },
-          "footer": {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "sm",
-            "contents": buttons
-          }
+            "type": "bubble",
+            "hero": {
+                "type": "text",
+                "text": "❻色数",
+                "weight": "bold",
+                "size": "lg"
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "プリントの色数を選択してください。",
+                        "size": "sm",
+                        "wrap": True
+                    }
+                ]
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "sm",
+                "contents": buttons
+            }
         }
         color_bubbles.append(bubble)
 
@@ -695,8 +726,7 @@ def flex_color_count():
 
 def flex_back_name():
     """
-    7.背ネーム・番号
-    背ネーム&背番号セット / ネーム(大) / 番号(大) / 背ネーム・番号を使わない
+    ❼背ネーム・番号
     """
     names = ["ネーム&背番号セット", "ネーム(大)", "番号(大)", "背ネーム・番号を使わない"]
     buttons = []
@@ -711,30 +741,42 @@ def flex_back_name():
                 "text": nm
             }
         })
+
     flex_body = {
-      "type": "bubble",
-      "hero": {
-        "type": "text",
-        "text": "7.背ネーム・番号",
-        "weight": "bold",
-        "size": "lg"
-      },
-      "body": {
-        "type": "box",
-        "layout": "vertical",
-        "contents": [
-          {"type": "text", "text": "背ネームや番号を入れる場合は選択してください。", "wrap": True},
-          {"type": "text", "text": "不要な場合は「背ネーム・番号を使わない」を選択してください。", "wrap": True, "size": "sm"}
-        ]
-      },
-      "footer": {
-        "type": "box",
-        "layout": "vertical",
-        "spacing": "sm",
-        "contents": buttons
-      }
+        "type": "bubble",
+        "hero": {
+            "type": "text",
+            "text": "❼背ネーム・番号",
+            "weight": "bold",
+            "size": "lg"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "背ネームや番号を入れる場合は選択してください。",
+                    "size": "sm",
+                    "wrap": True
+                },
+                {
+                    "type": "text",
+                    "text": "不要な場合は「背ネーム・番号を使わない」を選択してください。",
+                    "size": "sm",
+                    "wrap": True
+                }
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": buttons
+        }
     }
     return FlexSendMessage(alt_text="背ネーム・番号を選択してください", contents=flex_body)
+
 
 # -----------------------
 # 1) LINE Messaging API 受信 (Webhook)
