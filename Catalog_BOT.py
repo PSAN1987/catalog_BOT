@@ -392,12 +392,15 @@ def calculate_estimate(estimate_data):
 
 from linebot.models import FlexSendMessage
 
+from linebot.models import FlexSendMessage
+
 def flex_usage_date():
     """
     ❶使用日 (14日前以上 or 14日前以内)
     """
     flex_body = {
         "type": "bubble",
+        # タイトルと説明文を hero 部分に配置
         "hero": {
             "type": "box",
             "layout": "vertical",
@@ -406,16 +409,18 @@ def flex_usage_date():
                     "type": "text",
                     "text": "❶使用日",
                     "weight": "bold",
-                    "size": "lg"
+                    "size": "lg",
+                    "align": "center"    # ★中央揃え
                 },
                 {
                     "type": "text",
-                    "text": "大会やイベントで使用する日程を教えてください。(注文日から使用日が14日前以上なら早割適用)",
+                    "text": "大会やイベントで使用する日程を教えてください。(注文日から14日前以上なら早割)",
                     "size": "sm",
                     "wrap": True
                 }
             ]
         },
+        # ボタン群を footer に配置
         "footer": {
             "type": "box",
             "layout": "vertical",
@@ -476,7 +481,8 @@ def flex_budget():
                     "type": "text",
                     "text": "❷1枚当たりの予算",
                     "weight": "bold",
-                    "size": "lg"
+                    "size": "lg",
+                    "align": "center"    # ★中央揃え
                 },
                 {
                     "type": "text",
@@ -509,6 +515,7 @@ def flex_item_select():
         "ジップアップライトパーカー"
     ]
 
+    # 商品リストを分割しながら、複数のbubbleを束ねたcarouselを作る
     item_bubbles = []
     chunk_size = 5
     for i in range(0, len(items), chunk_size):
@@ -525,18 +532,20 @@ def flex_item_select():
                     "text": it
                 }
             })
+        # 各bubbleにも hero と footer を設置
         bubble = {
             "type": "bubble",
             "hero": {
-                "type": "text",
-                "text": "❸商品名",
-                "weight": "bold",
-                "size": "lg"
-            },
-            "body": {
                 "type": "box",
                 "layout": "vertical",
                 "contents": [
+                    {
+                        "type": "text",
+                        "text": "❸商品名",
+                        "weight": "bold",
+                        "size": "lg",
+                        "align": "center"    # ★中央揃え
+                    },
                     {
                         "type": "text",
                         "text": "ご希望の商品を選択してください。",
@@ -545,6 +554,7 @@ def flex_item_select():
                     }
                 ]
             },
+            # body を空にし、footer にボタンを置く
             "footer": {
                 "type": "box",
                 "layout": "vertical",
@@ -558,7 +568,6 @@ def flex_item_select():
         "type": "carousel",
         "contents": item_bubbles
     }
-
     return FlexSendMessage(alt_text="商品名を選択してください", contents=carousel)
 
 
@@ -590,7 +599,8 @@ def flex_quantity():
                     "type": "text",
                     "text": "❹枚数",
                     "weight": "bold",
-                    "size": "lg"
+                    "size": "lg",
+                    "align": "center"    # ★中央揃え
                 },
                 {
                     "type": "text",
@@ -631,15 +641,16 @@ def flex_print_position():
     flex_body = {
         "type": "bubble",
         "hero": {
-            "type": "text",
-            "text": "❺プリント位置",
-            "weight": "bold",
-            "size": "lg"
-        },
-        "body": {
             "type": "box",
             "layout": "vertical",
             "contents": [
+                {
+                    "type": "text",
+                    "text": "❺プリント位置",
+                    "weight": "bold",
+                    "size": "lg",
+                    "align": "center"   # ★中央揃え
+                },
                 {
                     "type": "text",
                     "text": "プリントを入れる箇所を選択してください。",
@@ -684,22 +695,23 @@ def flex_color_count():
                 "height": "sm",
                 "action": {
                     "type": "message",
-                    "label": c[:12],  # ラベルが長くなる場合の対策
+                    "label": c[:12],  # 表示ラベルが長い場合に短縮
                     "text": c
                 }
             })
         bubble = {
             "type": "bubble",
             "hero": {
-                "type": "text",
-                "text": "❻色数",
-                "weight": "bold",
-                "size": "lg"
-            },
-            "body": {
                 "type": "box",
                 "layout": "vertical",
                 "contents": [
+                    {
+                        "type": "text",
+                        "text": "❻色数",
+                        "weight": "bold",
+                        "size": "lg",
+                        "align": "center"   # ★中央揃え
+                    },
                     {
                         "type": "text",
                         "text": "プリントの色数を選択してください。",
@@ -745,15 +757,16 @@ def flex_back_name():
     flex_body = {
         "type": "bubble",
         "hero": {
-            "type": "text",
-            "text": "❼背ネーム・番号",
-            "weight": "bold",
-            "size": "lg"
-        },
-        "body": {
             "type": "box",
             "layout": "vertical",
             "contents": [
+                {
+                    "type": "text",
+                    "text": "❼背ネーム・番号",
+                    "weight": "bold",
+                    "size": "lg",
+                    "align": "center"   # ★中央揃え
+                },
                 {
                     "type": "text",
                     "text": "背ネームや番号を入れる場合は選択してください。",
@@ -776,6 +789,7 @@ def flex_back_name():
         }
     }
     return FlexSendMessage(alt_text="背ネーム・番号を選択してください", contents=flex_body)
+
 
 
 # -----------------------
