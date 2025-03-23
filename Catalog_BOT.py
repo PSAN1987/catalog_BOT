@@ -47,7 +47,6 @@ def get_gspread_client():
     credentials = ServiceAccountCredentials.from_json_keyfile_dict(service_account_dict, scope)
     return gspread.authorize(credentials)
 
-
 def get_or_create_worksheet(sheet, title):
     """
     スプレッドシート内で該当titleのワークシートを取得。
@@ -60,19 +59,18 @@ def get_or_create_worksheet(sheet, title):
         # 必要であればヘッダをセット
         if title == "CatalogRequests":
             ws.update('A1:H1', [[
-                "氏名", "郵便番号", "住所", "電話番号", 
-                "メールアドレス", "Insta/TikTok名", 
+                "氏名", "郵便番号", "住所", "電話番号",
+                "メールアドレス", "Insta/TikTok名",
                 "在籍予定の学校名と学年", "その他(質問・要望)"
             ]])
         elif title == "簡易見積":
             ws.update('A1:L1', [[
-                "日時", "見積番号", "ユーザーID", 
+                "日時", "見積番号", "ユーザーID",
                 "使用日(割引区分)", "予算", "商品名", "枚数",
-                "プリント位置", "色数", "背ネーム", 
+                "プリント位置", "色数", "背ネーム",
                 "合計金額", "単価"
             ]])
     return ws
-
 
 def write_to_spreadsheet_for_catalog(form_data: dict):
     """
@@ -98,17 +96,203 @@ def write_to_spreadsheet_for_catalog(form_data: dict):
 # -----------------------
 # 簡易見積用データ構造
 # -----------------------
-
-# 下記のように、商品・割引区分・枚数レンジ・価格をまとめた辞書を作成します。
-# ユーザー様が提供された全データをここに入れてください。
 PRICE_TABLE = [
-    # 商品名, MinQty, MaxQty, DiscountType, UnitPrice, プリント位置追加, 色数追加, フルカラー追加, ネーム&背番号セット, ネーム(大), 番号(大)
-    {"item":"ドライTシャツ","min_qty":10,"max_qty":14,"discount_type":"早割","unit_price":1830,"pos_add":850,"color_add":850,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    {"item":"ドライTシャツ","min_qty":10,"max_qty":14,"discount_type":"通常","unit_price":2030,"pos_add":850,"color_add":850,"fullcolor_add":550,"set_name_num":900,"big_name":550,"big_num":550},
-    # ...以下省略。同様にすべての行を追加...
+    {"item": "ドライTシャツ", "min_qty": 10, "max_qty": 14, "discount_type": "早割", "unit_price": 1830, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライTシャツ", "min_qty": 10, "max_qty": 14, "discount_type": "通常", "unit_price": 2030, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライTシャツ", "min_qty": 15, "max_qty": 19, "discount_type": "早割", "unit_price": 1470, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライTシャツ", "min_qty": 15, "max_qty": 19, "discount_type": "通常", "unit_price": 1670, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライTシャツ", "min_qty": 20, "max_qty": 29, "discount_type": "早割", "unit_price": 1230, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライTシャツ", "min_qty": 20, "max_qty": 29, "discount_type": "通常", "unit_price": 1430, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライTシャツ", "min_qty": 30, "max_qty": 39, "discount_type": "早割", "unit_price": 1060, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライTシャツ", "min_qty": 30, "max_qty": 39, "discount_type": "通常", "unit_price": 1260, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライTシャツ", "min_qty": 40, "max_qty": 49, "discount_type": "早割", "unit_price": 980, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライTシャツ", "min_qty": 40, "max_qty": 49, "discount_type": "通常", "unit_price": 1180, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライTシャツ", "min_qty": 50, "max_qty": 99, "discount_type": "早割", "unit_price": 890, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライTシャツ", "min_qty": 50, "max_qty": 99, "discount_type": "通常", "unit_price": 1090, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライTシャツ", "min_qty": 100, "max_qty": 500, "discount_type": "早割", "unit_price": 770, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライTシャツ", "min_qty": 100, "max_qty": 500, "discount_type": "通常", "unit_price": 970, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+
+    {"item": "ヘビーウェイトTシャツ", "min_qty": 10, "max_qty": 14, "discount_type": "早割", "unit_price": 1970, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトTシャツ", "min_qty": 10, "max_qty": 14, "discount_type": "通常", "unit_price": 2170, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトTシャツ", "min_qty": 15, "max_qty": 19, "discount_type": "早割", "unit_price": 1610, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトTシャツ", "min_qty": 15, "max_qty": 19, "discount_type": "通常", "unit_price": 1810, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトTシャツ", "min_qty": 20, "max_qty": 29, "discount_type": "早割", "unit_price": 1370, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトTシャツ", "min_qty": 20, "max_qty": 29, "discount_type": "通常", "unit_price": 1570, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトTシャツ", "min_qty": 30, "max_qty": 39, "discount_type": "早割", "unit_price": 1200, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトTシャツ", "min_qty": 30, "max_qty": 39, "discount_type": "通常", "unit_price": 1400, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトTシャツ", "min_qty": 40, "max_qty": 49, "discount_type": "早割", "unit_price": 1120, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトTシャツ", "min_qty": 40, "max_qty": 49, "discount_type": "通常", "unit_price": 1320, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトTシャツ", "min_qty": 50, "max_qty": 99, "discount_type": "早割", "unit_price": 1030, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトTシャツ", "min_qty": 50, "max_qty": 99, "discount_type": "通常", "unit_price": 1230, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトTシャツ", "min_qty": 100, "max_qty": 500, "discount_type": "早割", "unit_price": 910, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトTシャツ", "min_qty": 100, "max_qty": 500, "discount_type": "通常", "unit_price": 1100, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+
+    {"item": "ドライポロシャツ", "min_qty": 10, "max_qty": 14, "discount_type": "早割", "unit_price": 2170, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライポロシャツ", "min_qty": 10, "max_qty": 14, "discount_type": "通常", "unit_price": 2370, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライポロシャツ", "min_qty": 15, "max_qty": 19, "discount_type": "早割", "unit_price": 1810, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライポロシャツ", "min_qty": 15, "max_qty": 19, "discount_type": "通常", "unit_price": 2010, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライポロシャツ", "min_qty": 20, "max_qty": 29, "discount_type": "早割", "unit_price": 1570, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライポロシャツ", "min_qty": 20, "max_qty": 29, "discount_type": "通常", "unit_price": 1770, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライポロシャツ", "min_qty": 30, "max_qty": 39, "discount_type": "早割", "unit_price": 1400, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライポロシャツ", "min_qty": 30, "max_qty": 39, "discount_type": "通常", "unit_price": 1600, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライポロシャツ", "min_qty": 40, "max_qty": 49, "discount_type": "早割", "unit_price": 1320, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライポロシャツ", "min_qty": 40, "max_qty": 49, "discount_type": "通常", "unit_price": 1520, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライポロシャツ", "min_qty": 50, "max_qty": 99, "discount_type": "早割", "unit_price": 1230, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライポロシャツ", "min_qty": 50, "max_qty": 99, "discount_type": "通常", "unit_price": 1430, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライポロシャツ", "min_qty": 100, "max_qty": 500, "discount_type": "早割", "unit_price": 1110, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライポロシャツ", "min_qty": 100, "max_qty": 500, "discount_type": "通常", "unit_price": 1310, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+
+    {"item": "ドライメッシュビブス", "min_qty": 10, "max_qty": 14, "discount_type": "早割", "unit_price": 2170, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライメッシュビブス", "min_qty": 10, "max_qty": 14, "discount_type": "通常", "unit_price": 2370, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライメッシュビブス", "min_qty": 15, "max_qty": 19, "discount_type": "早割", "unit_price": 1810, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライメッシュビブス", "min_qty": 15, "max_qty": 19, "discount_type": "通常", "unit_price": 2010, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライメッシュビブス", "min_qty": 20, "max_qty": 29, "discount_type": "早割", "unit_price": 1570, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライメッシュビブス", "min_qty": 20, "max_qty": 29, "discount_type": "通常", "unit_price": 1770, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライメッシュビブス", "min_qty": 30, "max_qty": 39, "discount_type": "早割", "unit_price": 1400, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライメッシュビブス", "min_qty": 30, "max_qty": 39, "discount_type": "通常", "unit_price": 1600, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライメッシュビブス", "min_qty": 40, "max_qty": 49, "discount_type": "早割", "unit_price": 1320, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライメッシュビブス", "min_qty": 40, "max_qty": 49, "discount_type": "通常", "unit_price": 1520, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライメッシュビブス", "min_qty": 50, "max_qty": 99, "discount_type": "早割", "unit_price": 1230, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライメッシュビブス", "min_qty": 50, "max_qty": 99, "discount_type": "通常", "unit_price": 1430, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライメッシュビブス", "min_qty": 100, "max_qty": 500, "discount_type": "早割", "unit_price": 1100, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライメッシュビブス", "min_qty": 100, "max_qty": 500, "discount_type": "通常", "unit_price": 1310, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+
+    {"item": "ドライベースボールシャツ", "min_qty": 10, "max_qty": 14, "discount_type": "早割", "unit_price": 2470, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライベースボールシャツ", "min_qty": 10, "max_qty": 14, "discount_type": "通常", "unit_price": 2670, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライベースボールシャツ", "min_qty": 15, "max_qty": 19, "discount_type": "早割", "unit_price": 2110, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライベースボールシャツ", "min_qty": 15, "max_qty": 19, "discount_type": "通常", "unit_price": 2310, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライベースボールシャツ", "min_qty": 20, "max_qty": 29, "discount_type": "早割", "unit_price": 1870, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライベースボールシャツ", "min_qty": 20, "max_qty": 29, "discount_type": "通常", "unit_price": 2070, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライベースボールシャツ", "min_qty": 30, "max_qty": 39, "discount_type": "早割", "unit_price": 1700, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライベースボールシャツ", "min_qty": 30, "max_qty": 39, "discount_type": "通常", "unit_price": 1900, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライベースボールシャツ", "min_qty": 40, "max_qty": 49, "discount_type": "早割", "unit_price": 1620, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライベースボールシャツ", "min_qty": 40, "max_qty": 49, "discount_type": "通常", "unit_price": 1820, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライベースボールシャツ", "min_qty": 50, "max_qty": 99, "discount_type": "早割", "unit_price": 1530, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライベースボールシャツ", "min_qty": 50, "max_qty": 99, "discount_type": "通常", "unit_price": 1730, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライベースボールシャツ", "min_qty": 100, "max_qty": 500, "discount_type": "早割", "unit_price": 1410, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライベースボールシャツ", "min_qty": 100, "max_qty": 500, "discount_type": "通常", "unit_price": 1610, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+
+    {"item": "ドライロングスリープTシャツ", "min_qty": 10, "max_qty": 14, "discount_type": "早割", "unit_price": 2030, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライロングスリープTシャツ", "min_qty": 10, "max_qty": 14, "discount_type": "通常", "unit_price": 2230, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライロングスリープTシャツ", "min_qty": 15, "max_qty": 19, "discount_type": "早割", "unit_price": 1670, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライロングスリープTシャツ", "min_qty": 15, "max_qty": 19, "discount_type": "通常", "unit_price": 1870, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライロングスリープTシャツ", "min_qty": 20, "max_qty": 29, "discount_type": "早割", "unit_price": 1430, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライロングスリープTシャツ", "min_qty": 20, "max_qty": 29, "discount_type": "通常", "unit_price": 1630, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライロングスリープTシャツ", "min_qty": 30, "max_qty": 39, "discount_type": "早割", "unit_price": 1260, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライロングスリープTシャツ", "min_qty": 30, "max_qty": 39, "discount_type": "通常", "unit_price": 1460, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライロングスリープTシャツ", "min_qty": 40, "max_qty": 49, "discount_type": "早割", "unit_price": 1180, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライロングスリープTシャツ", "min_qty": 40, "max_qty": 49, "discount_type": "通常", "unit_price": 1380, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライロングスリープTシャツ", "min_qty": 50, "max_qty": 99, "discount_type": "早割", "unit_price": 1090, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライロングスリープTシャツ", "min_qty": 50, "max_qty": 99, "discount_type": "通常", "unit_price": 1290, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライロングスリープTシャツ", "min_qty": 100, "max_qty": 500, "discount_type": "早割", "unit_price": 970, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライロングスリープTシャツ", "min_qty": 100, "max_qty": 500, "discount_type": "通常", "unit_price": 1170, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+
+    {"item": "ドライハーフパンツ", "min_qty": 10, "max_qty": 14, "discount_type": "早割", "unit_price": 2270, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライハーフパンツ", "min_qty": 10, "max_qty": 14, "discount_type": "通常", "unit_price": 2470, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライハーフパンツ", "min_qty": 15, "max_qty": 19, "discount_type": "早割", "unit_price": 1910, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライハーフパンツ", "min_qty": 15, "max_qty": 19, "discount_type": "通常", "unit_price": 2110, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライハーフパンツ", "min_qty": 20, "max_qty": 29, "discount_type": "早割", "unit_price": 1670, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライハーフパンツ", "min_qty": 20, "max_qty": 29, "discount_type": "通常", "unit_price": 1870, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライハーフパンツ", "min_qty": 30, "max_qty": 39, "discount_type": "早割", "unit_price": 1500, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライハーフパンツ", "min_qty": 30, "max_qty": 39, "discount_type": "通常", "unit_price": 1700, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライハーフパンツ", "min_qty": 40, "max_qty": 49, "discount_type": "早割", "unit_price": 1420, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライハーフパンツ", "min_qty": 40, "max_qty": 49, "discount_type": "通常", "unit_price": 1620, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライハーフパンツ", "min_qty": 50, "max_qty": 99, "discount_type": "早割", "unit_price": 1330, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライハーフパンツ", "min_qty": 50, "max_qty": 99, "discount_type": "通常", "unit_price": 1530, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライハーフパンツ", "min_qty": 100, "max_qty": 500, "discount_type": "早割", "unit_price": 1210, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ドライハーフパンツ", "min_qty": 100, "max_qty": 500, "discount_type": "通常", "unit_price": 1410, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+
+    {"item": "ヘビーウェイトロングスリープTシャツ", "min_qty": 10, "max_qty": 14, "discount_type": "早割", "unit_price": 2330, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトロングスリープTシャツ", "min_qty": 10, "max_qty": 14, "discount_type": "通常", "unit_price": 2530, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトロングスリープTシャツ", "min_qty": 15, "max_qty": 19, "discount_type": "早割", "unit_price": 1970, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトロングスリープTシャツ", "min_qty": 15, "max_qty": 19, "discount_type": "通常", "unit_price": 2170, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトロングスリープTシャツ", "min_qty": 20, "max_qty": 29, "discount_type": "早割", "unit_price": 1730, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトロングスリープTシャツ", "min_qty": 20, "max_qty": 29, "discount_type": "通常", "unit_price": 1930, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトロングスリープTシャツ", "min_qty": 30, "max_qty": 39, "discount_type": "早割", "unit_price": 1560, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトロングスリープTシャツ", "min_qty": 30, "max_qty": 39, "discount_type": "通常", "unit_price": 1760, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトロングスリープTシャツ", "min_qty": 40, "max_qty": 49, "discount_type": "早割", "unit_price": 1480, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトロングスリープTシャツ", "min_qty": 40, "max_qty": 49, "discount_type": "通常", "unit_price": 1680, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトロングスリープTシャツ", "min_qty": 50, "max_qty": 99, "discount_type": "早割", "unit_price": 1390, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトロングスリープTシャツ", "min_qty": 50, "max_qty": 99, "discount_type": "通常", "unit_price": 1590, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトロングスリープTシャツ", "min_qty": 100, "max_qty": 500, "discount_type": "早割", "unit_price": 1270, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ヘビーウェイトロングスリープTシャツ", "min_qty": 100, "max_qty": 500, "discount_type": "通常", "unit_price": 1470, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+
+    {"item": "クルーネックライトトレーナー", "min_qty": 10, "max_qty": 14, "discount_type": "早割", "unit_price": 2870, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "クルーネックライトトレーナー", "min_qty": 10, "max_qty": 14, "discount_type": "通常", "unit_price": 3070, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "クルーネックライトトレーナー", "min_qty": 15, "max_qty": 19, "discount_type": "早割", "unit_price": 2510, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "クルーネックライトトレーナー", "min_qty": 15, "max_qty": 19, "discount_type": "通常", "unit_price": 2710, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "クルーネックライトトレーナー", "min_qty": 20, "max_qty": 29, "discount_type": "早割", "unit_price": 2270, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "クルーネックライトトレーナー", "min_qty": 20, "max_qty": 29, "discount_type": "通常", "unit_price": 2470, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "クルーネックライトトレーナー", "min_qty": 30, "max_qty": 39, "discount_type": "早割", "unit_price": 2100, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "クルーネックライトトレーナー", "min_qty": 30, "max_qty": 39, "discount_type": "通常", "unit_price": 2300, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "クルーネックライトトレーナー", "min_qty": 40, "max_qty": 49, "discount_type": "早割", "unit_price": 2020, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "クルーネックライトトレーナー", "min_qty": 40, "max_qty": 49, "discount_type": "通常", "unit_price": 2220, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "クルーネックライトトレーナー", "min_qty": 50, "max_qty": 99, "discount_type": "早割", "unit_price": 1930, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "クルーネックライトトレーナー", "min_qty": 50, "max_qty": 99, "discount_type": "通常", "unit_price": 2130, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "クルーネックライトトレーナー", "min_qty": 100, "max_qty": 500, "discount_type": "早割", "unit_price": 1810, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "クルーネックライトトレーナー", "min_qty": 100, "max_qty": 500, "discount_type": "通常", "unit_price": 2010, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+
+    {"item": "フーデッドライトパーカー", "min_qty": 10, "max_qty": 14, "discount_type": "早割", "unit_price": 3270, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "フーデッドライトパーカー", "min_qty": 10, "max_qty": 14, "discount_type": "通常", "unit_price": 3470, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "フーデッドライトパーカー", "min_qty": 15, "max_qty": 19, "discount_type": "早割", "unit_price": 2910, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "フーデッドライトパーカー", "min_qty": 15, "max_qty": 19, "discount_type": "通常", "unit_price": 3110, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "フーデッドライトパーカー", "min_qty": 20, "max_qty": 29, "discount_type": "早割", "unit_price": 2670, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "フーデッドライトパーカー", "min_qty": 20, "max_qty": 29, "discount_type": "通常", "unit_price": 2870, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "フーデッドライトパーカー", "min_qty": 30, "max_qty": 39, "discount_type": "早割", "unit_price": 2500, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "フーデッドライトパーカー", "min_qty": 30, "max_qty": 39, "discount_type": "通常", "unit_price": 2700, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "フーデッドライトパーカー", "min_qty": 40, "max_qty": 49, "discount_type": "早割", "unit_price": 2420, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "フーデッドライトパーカー", "min_qty": 40, "max_qty": 49, "discount_type": "通常", "unit_price": 2620, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "フーデッドライトパーカー", "min_qty": 50, "max_qty": 99, "discount_type": "早割", "unit_price": 2330, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "フーデッドライトパーカー", "min_qty": 50, "max_qty": 99, "discount_type": "通常", "unit_price": 2530, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "フーデッドライトパーカー", "min_qty": 100, "max_qty": 500, "discount_type": "早割", "unit_price": 2210, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "フーデッドライトパーカー", "min_qty": 100, "max_qty": 500, "discount_type": "通常", "unit_price": 2410, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+
+    {"item": "スタンダードトレーナー", "min_qty": 10, "max_qty": 14, "discount_type": "早割", "unit_price": 3280, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードトレーナー", "min_qty": 10, "max_qty": 14, "discount_type": "通常", "unit_price": 3480, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードトレーナー", "min_qty": 15, "max_qty": 19, "discount_type": "早割", "unit_price": 2920, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードトレーナー", "min_qty": 15, "max_qty": 19, "discount_type": "通常", "unit_price": 3120, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードトレーナー", "min_qty": 20, "max_qty": 29, "discount_type": "早割", "unit_price": 2680, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードトレーナー", "min_qty": 20, "max_qty": 29, "discount_type": "通常", "unit_price": 2880, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードトレーナー", "min_qty": 30, "max_qty": 39, "discount_type": "早割", "unit_price": 2510, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードトレーナー", "min_qty": 30, "max_qty": 39, "discount_type": "通常", "unit_price": 2710, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードトレーナー", "min_qty": 40, "max_qty": 49, "discount_type": "早割", "unit_price": 2430, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードトレーナー", "min_qty": 40, "max_qty": 49, "discount_type": "通常", "unit_price": 2630, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードトレーナー", "min_qty": 50, "max_qty": 99, "discount_type": "早割", "unit_price": 2340, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードトレーナー", "min_qty": 50, "max_qty": 99, "discount_type": "通常", "unit_price": 2540, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードトレーナー", "min_qty": 100, "max_qty": 500, "discount_type": "早割", "unit_price": 2220, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードトレーナー", "min_qty": 100, "max_qty": 500, "discount_type": "通常", "unit_price": 2420, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+
+    {"item": "スタンダードWフードパーカー", "min_qty": 10, "max_qty": 14, "discount_type": "早割", "unit_price": 4040, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードWフードパーカー", "min_qty": 10, "max_qty": 14, "discount_type": "通常", "unit_price": 4240, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードWフードパーカー", "min_qty": 15, "max_qty": 19, "discount_type": "早割", "unit_price": 3680, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードWフードパーカー", "min_qty": 15, "max_qty": 19, "discount_type": "通常", "unit_price": 3880, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードWフードパーカー", "min_qty": 20, "max_qty": 29, "discount_type": "早割", "unit_price": 3440, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードWフードパーカー", "min_qty": 20, "max_qty": 29, "discount_type": "通常", "unit_price": 3640, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードWフードパーカー", "min_qty": 30, "max_qty": 39, "discount_type": "早割", "unit_price": 3270, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードWフードパーカー", "min_qty": 30, "max_qty": 39, "discount_type": "通常", "unit_price": 3470, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードWフードパーカー", "min_qty": 40, "max_qty": 49, "discount_type": "早割", "unit_price": 3190, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードWフードパーカー", "min_qty": 40, "max_qty": 49, "discount_type": "通常", "unit_price": 3390, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードWフードパーカー", "min_qty": 50, "max_qty": 99, "discount_type": "早割", "unit_price": 3100, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードWフードパーカー", "min_qty": 50, "max_qty": 99, "discount_type": "通常", "unit_price": 3300, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードWフードパーカー", "min_qty": 100, "max_qty": 500, "discount_type": "早割", "unit_price": 2980, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "スタンダードWフードパーカー", "min_qty": 100, "max_qty": 500, "discount_type": "通常", "unit_price": 3180, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+
+    {"item": "ジップアップライトパーカー", "min_qty": 10, "max_qty": 14, "discount_type": "早割", "unit_price": 3770, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ジップアップライトパーカー", "min_qty": 10, "max_qty": 14, "discount_type": "通常", "unit_price": 3970, "pos_add": 850, "color_add": 850, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ジップアップライトパーカー", "min_qty": 15, "max_qty": 19, "discount_type": "早割", "unit_price": 3410, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ジップアップライトパーカー", "min_qty": 15, "max_qty": 19, "discount_type": "通常", "unit_price": 3610, "pos_add": 650, "color_add": 650, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ジップアップライトパーカー", "min_qty": 20, "max_qty": 29, "discount_type": "早割", "unit_price": 3170, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ジップアップライトパーカー", "min_qty": 20, "max_qty": 29, "discount_type": "通常", "unit_price": 3370, "pos_add": 450, "color_add": 450, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ジップアップライトパーカー", "min_qty": 30, "max_qty": 39, "discount_type": "早割", "unit_price": 3000, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ジップアップライトパーカー", "min_qty": 30, "max_qty": 39, "discount_type": "通常", "unit_price": 3200, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ジップアップライトパーカー", "min_qty": 40, "max_qty": 49, "discount_type": "早割", "unit_price": 2920, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ジップアップライトパーカー", "min_qty": 40, "max_qty": 49, "discount_type": "通常", "unit_price": 3120, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ジップアップライトパーカー", "min_qty": 50, "max_qty": 99, "discount_type": "早割", "unit_price": 2830, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ジップアップライトパーカー", "min_qty": 50, "max_qty": 99, "discount_type": "通常", "unit_price": 3030, "pos_add": 350, "color_add": 350, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ジップアップライトパーカー", "min_qty": 100, "max_qty": 500, "discount_type": "早割", "unit_price": 2710, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
+    {"item": "ジップアップライトパーカー", "min_qty": 100, "max_qty": 500, "discount_type": "通常", "unit_price": 2910, "pos_add": 300, "color_add": 300, "fullcolor_add": 550, "set_name_num": 900, "big_name": 550, "big_num": 550},
 ]
 
-# 追加料金の判定ロジック（色数）
 COLOR_COST_MAP = {
     "前 or 背中 1色": (0, 0),
     "前 or 背中 2色": (1, 0),
@@ -120,9 +304,8 @@ COLOR_COST_MAP = {
     "前と背中 フルカラー": (0, 2),
 }
 
-# ユーザの見積フロー管理用（簡易セッション）
+# ユーザの見積フロー管理用（簡易的セッション）
 user_estimate_sessions = {}  # { user_id: {"step": n, "answers": {...}} }
-
 
 def write_estimate_to_spreadsheet(user_id, estimate_data, total_price, unit_price):
     """
@@ -132,16 +315,13 @@ def write_estimate_to_spreadsheet(user_id, estimate_data, total_price, unit_pric
     sh = gc.open_by_key(SPREADSHEET_KEY)
     worksheet = get_or_create_worksheet(sh, "簡易見積")
 
-    # 見積番号を生成（例: UNIX時間）
-    quote_number = str(int(time.time()))
+    quote_number = str(int(time.time()))  # 見積番号を UNIX時間 で仮生成
 
-    # A列から順に: 日時, 見積番号, ユーザーID,
-    #               使用日(割引区分), 予算, 商品名, 枚数, プリント位置, 色数, 背ネーム, 合計金額, 単価
     new_row = [
-        time.strftime("%Y/%m/%d %H:%M:%S"),    # 日時
-        quote_number,                          # 見積番号
-        user_id,                               # ユーザーID
-        f"{estimate_data['usage_date']}({estimate_data['discount_type']})",  # 例 "14日前以上(早割)"
+        time.strftime("%Y/%m/%d %H:%M:%S"),
+        quote_number,
+        user_id,
+        f"{estimate_data['usage_date']}({estimate_data['discount_type']})",
         estimate_data['budget'],
         estimate_data['item'],
         estimate_data['quantity'],
@@ -155,30 +335,20 @@ def write_estimate_to_spreadsheet(user_id, estimate_data, total_price, unit_pric
 
     return quote_number
 
-
 def find_price_row(item_name, discount_type, quantity):
     """
-    PRICE_TABLE から該当する行を探して返す。
-    該当しない場合は None を返す
+    PRICE_TABLE から該当する行を探し返す。該当しない場合は None
     """
     for row in PRICE_TABLE:
-        if (row["item"] == item_name 
+        if (row["item"] == item_name
             and row["discount_type"] == discount_type
             and row["min_qty"] <= quantity <= row["max_qty"]):
             return row
     return None
 
-
 def calculate_estimate(estimate_data):
     """
-    estimate_data から見積を計算して (total_price, unit_price) を返す
-    estimate_dataは以下のキーを持つ想定:
-      - discount_type  ( '早割' or '通常' )
-      - item          (商品名)
-      - quantity      (int)
-      - print_position
-      - color_count
-      - back_name
+    入力された見積データから合計金額と単価を計算して返す
     """
     item_name = estimate_data['item']
     discount_type = estimate_data['discount_type']
@@ -187,11 +357,9 @@ def calculate_estimate(estimate_data):
     color_choice = estimate_data['color_count']
     back_name = estimate_data['back_name']
 
-    # 該当行の単価情報を取得
     row = find_price_row(item_name, discount_type, quantity)
     if row is None:
-        # 該当なしの場合は計算不能
-        return 0, 0
+        return 0, 0  # 見つからない場合
 
     base_price = row["unit_price"]
 
@@ -201,12 +369,11 @@ def calculate_estimate(estimate_data):
     else:
         pos_add = row["pos_add"]
 
-    # 色数追加ロジック
+    # 色数追加
     color_add_count, fullcolor_add_count = COLOR_COST_MAP[color_choice]
     color_fee = color_add_count * row["color_add"] + fullcolor_add_count * row["fullcolor_add"]
 
-    # 背ネーム
-    # 「背ネーム・番号を使わない」の場合は0
+    # 背ネーム・番号
     if back_name == "ネーム&背番号セット":
         back_name_fee = row["set_name_num"]
     elif back_name == "ネーム(大)":
@@ -214,47 +381,39 @@ def calculate_estimate(estimate_data):
     elif back_name == "番号(大)":
         back_name_fee = row["big_num"]
     else:
-        # 背ネーム・番号を使わない → 0円
+        # 背ネーム・番号を使わない
         back_name_fee = 0
 
-    # 1枚あたりの価格
     unit_price = base_price + pos_add + color_fee + back_name_fee
     total_price = unit_price * quantity
 
     return total_price, unit_price
 
+
 # -----------------------
-# Flex Message作成ヘルパー
+# Flex Message作成 (タイトル修正 & 選択肢修正)
 # -----------------------
 def flex_usage_date():
     """
-    1) 使用日の質問（14日前以上 or 14日前以内）
+    1.使用日 (14日前以上 or 14日前以内)
     """
     flex_body = {
       "type": "bubble",
       "hero": {
-        "type": "text",
-        "text": "【使用日】",
-        "weight": "bold",
-        "size": "lg",
-        "align": "center"
-      },
-      "body": {
         "type": "box",
         "layout": "vertical",
         "contents": [
           {
             "type": "text",
-            "text": "大会やイベントで使用する日程を教えてください。",
-            "wrap": True,
-            "size": "md"
+            "text": "1.使用日",
+            "weight": "bold",
+            "size": "lg"
           },
           {
             "type": "text",
-            "text": "印刷開始日から14日以上あれば“14日前以上”、\n14日以内なら“14日前以内”を選択してください。",
-            "wrap": True,
+            "text": "大会やイベントで使用する日程を教えてください。\n(印刷開始14日前以上なら早割)",
             "size": "sm",
-            "margin": "md"
+            "wrap": True
           }
         ]
       },
@@ -283,7 +442,8 @@ def flex_usage_date():
               "text": "14日前以内"
             }
           }
-        ]
+        ],
+        "flex": 0
       }
     }
     return FlexSendMessage(alt_text="使用日を選択してください", contents=flex_body)
@@ -291,7 +451,7 @@ def flex_usage_date():
 
 def flex_budget():
     """
-    2) 1枚当たりの予算選択
+    2.1枚当たりの予算
     """
     budgets = ["1,000円", "2,000円", "3,000円", "4,000円", "5,000円"]
     buttons = []
@@ -311,28 +471,23 @@ def flex_budget():
       "type": "bubble",
       "hero": {
         "type": "text",
-        "text": "【1枚あたりの予算】",
+        "text": "2.1枚当たりの予算",
         "weight": "bold",
-        "size": "lg",
-        "align": "center"
+        "size": "lg"
       },
       "body": {
         "type": "box",
         "layout": "vertical",
         "contents": [
-          {
-            "type": "text",
-            "text": "ご希望の1枚あたりの予算を選択してください。",
-            "wrap": True,
-            "size": "md"
-          }
+          {"type": "text", "text": "ご希望の1枚あたり予算を選択してください。", "wrap": True}
         ]
       },
       "footer": {
         "type": "box",
         "layout": "vertical",
         "spacing": "sm",
-        "contents": buttons
+        "contents": buttons,
+        "flex": 0
       }
     }
     return FlexSendMessage(alt_text="予算を選択してください", contents=flex_body)
@@ -340,7 +495,7 @@ def flex_budget():
 
 def flex_item_select():
     """
-    3) 商品名選択用
+    3.商品名
     """
     items = [
         "ドライTシャツ","ヘビーウェイトTシャツ","ドライポロシャツ","ドライメッシュビブス",
@@ -370,21 +525,15 @@ def flex_item_select():
           "type": "bubble",
           "hero": {
             "type": "text",
-            "text": "【商品名】",
+            "text": "3.商品名",
             "weight": "bold",
-            "size": "lg",
-            "align": "center"
+            "size": "lg"
           },
           "body": {
             "type": "box",
             "layout": "vertical",
             "contents": [
-              {
-                "type": "text",
-                "text": "ご希望の商品を選択してください。",
-                "wrap": True,
-                "size": "md"
-              }
+              {"type": "text", "text": "ご希望の商品を選択してください。", "wrap": True}
             ]
           },
           "footer": {
@@ -406,9 +555,10 @@ def flex_item_select():
 
 def flex_quantity():
     """
-    4) 必要枚数を10,20,30,40,50以上から選択
+    4.枚数
     """
-    quantities = ["10", "20", "30", "40", "50以上"]
+    # ★修正： '50以上' をなくして、代わりに '50', '100' を追加。
+    quantities = ["10", "20", "30", "40", "50", "100"]
     buttons = []
     for q in quantities:
         buttons.append({
@@ -425,28 +575,17 @@ def flex_quantity():
       "type": "bubble",
       "hero": {
         "type": "text",
-        "text": "【枚数】",
+        "text": "4.枚数",
         "weight": "bold",
-        "size": "lg",
-        "align": "center"
+        "size": "lg"
       },
       "body": {
         "type": "box",
         "layout": "vertical",
         "contents": [
-          {
-            "type": "text",
-            "text": "必要な枚数を選択してください。",
-            "wrap": True,
-            "size": "md"
-          },
-          {
-            "type": "text",
-            "text": "「50以上」を選ぶと一律で100枚として計算されます。",
-            "wrap": True,
-            "size": "sm",
-            "margin": "md"
-          }
+          # ★説明文も修正し、「50以上」という表記を削除
+          {"type": "text", "text": "必要枚数を選択してください。", "wrap": True},
+          {"type": "text", "text": "「50」または「100」枚を選ぶことでPRICE TABLEを網羅できます。", "wrap": True, "size": "sm"}
         ]
       },
       "footer": {
@@ -461,7 +600,7 @@ def flex_quantity():
 
 def flex_print_position():
     """
-    5) プリント位置 (前のみ / 背中のみ / 前と背中)
+    5.プリント位置
     """
     positions = ["前のみ", "背中のみ", "前と背中"]
     buttons = []
@@ -480,28 +619,15 @@ def flex_print_position():
       "type": "bubble",
       "hero": {
         "type": "text",
-        "text": "【プリント位置】",
+        "text": "5.プリント位置",
         "weight": "bold",
-        "size": "lg",
-        "align": "center"
+        "size": "lg"
       },
       "body": {
         "type": "box",
         "layout": "vertical",
         "contents": [
-          {
-            "type": "text",
-            "text": "プリントを入れる場所を選択してください。",
-            "wrap": True,
-            "size": "md"
-          },
-          {
-            "type": "text",
-            "text": "複数箇所の場合は追加料金が発生します。",
-            "wrap": True,
-            "size": "sm",
-            "margin": "md"
-          }
+          {"type": "text", "text": "プリントを入れる箇所を選択してください。", "wrap": True}
         ]
       },
       "footer": {
@@ -516,20 +642,11 @@ def flex_print_position():
 
 def flex_color_count():
     """
-    6) 色数 (全8パターン)
+    6.色数
     """
-    color_list = [
-        "前 or 背中 1色",
-        "前 or 背中 2色",
-        "前 or 背中 フルカラー",
-        "前と背中 前1色 背中1色",
-        "前と背中 前2色 背中1色",
-        "前と背中 前1色 背中2色",
-        "前と背中 前2色 背中2色",
-        "前と背中 フルカラー",
-    ]
-    color_bubbles = []
+    color_list = list(COLOR_COST_MAP.keys())  # 8パターン
     chunk_size = 4
+    color_bubbles = []
     for i in range(0, len(color_list), chunk_size):
         chunk = color_list[i:i+chunk_size]
         buttons = []
@@ -540,8 +657,8 @@ def flex_color_count():
                 "height": "sm",
                 "action": {
                     "type": "message",
-                    # ボタンラベルが長いと崩れるので少し短めに
-                    "label": c[:12],  
+                    # ラベルが長い場合は一部省略
+                    "label": c[:12],
                     "text": c
                 }
             })
@@ -549,21 +666,15 @@ def flex_color_count():
           "type": "bubble",
           "hero": {
             "type": "text",
-            "text": "【色数】",
+            "text": "6.色数",
             "weight": "bold",
-            "size": "lg",
-            "align": "center"
+            "size": "lg"
           },
           "body": {
             "type": "box",
             "layout": "vertical",
             "contents": [
-              {
-                "type": "text",
-                "text": "プリント色数を選択してください。\n(色数追加料金が変わります)",
-                "wrap": True,
-                "size": "sm"
-              }
+              {"type": "text", "text": "プリントの色数を選択してください。", "wrap": True}
             ]
           },
           "footer": {
@@ -584,8 +695,8 @@ def flex_color_count():
 
 def flex_back_name():
     """
-    7) 背ネーム
-    ネーム&背番号セット / ネーム(大) / 番号(大) / 背ネーム・番号を使わない
+    7.背ネーム・番号
+    背ネーム&背番号セット / ネーム(大) / 番号(大) / 背ネーム・番号を使わない
     """
     names = ["ネーム&背番号セット", "ネーム(大)", "番号(大)", "背ネーム・番号を使わない"]
     buttons = []
@@ -604,28 +715,16 @@ def flex_back_name():
       "type": "bubble",
       "hero": {
         "type": "text",
-        "text": "【背ネーム】",
+        "text": "7.背ネーム・番号",
         "weight": "bold",
-        "size": "lg",
-        "align": "center"
+        "size": "lg"
       },
       "body": {
         "type": "box",
         "layout": "vertical",
         "contents": [
-          {
-            "type": "text",
-            "text": "背ネームや番号を入れる場合は選択してください。",
-            "wrap": True,
-            "size": "md"
-          },
-          {
-            "type": "text",
-            "text": "不要な場合は「背ネーム・番号を使わない」を選択してください。",
-            "wrap": True,
-            "size": "sm",
-            "margin": "md"
-          }
+          {"type": "text", "text": "背ネームや番号を入れる場合は選択してください。", "wrap": True},
+          {"type": "text", "text": "不要な場合は「背ネーム・番号を使わない」を選択してください。", "wrap": True, "size": "sm"}
         ]
       },
       "footer": {
@@ -635,7 +734,7 @@ def flex_back_name():
         "contents": buttons
       }
     }
-    return FlexSendMessage(alt_text="背ネームを選択してください", contents=flex_body)
+    return FlexSendMessage(alt_text="背ネーム・番号を選択してください", contents=flex_body)
 
 # -----------------------
 # 1) LINE Messaging API 受信 (Webhook)
@@ -652,7 +751,6 @@ def line_callback():
 
     return "OK", 200
 
-
 # -----------------------
 # 2) LINE上でメッセージ受信時
 # -----------------------
@@ -661,9 +759,8 @@ def handle_message(event: MessageEvent):
     user_id = event.source.user_id
     user_message = event.message.text.strip()
 
-    # まずは「見積り」フロー中かどうか
+    # すでに見積りフロー中かどうか
     if user_id in user_estimate_sessions and user_estimate_sessions[user_id]["step"] > 0:
-        # 見積りフロー中
         process_estimate_flow(event, user_message)
         return
 
@@ -673,106 +770,90 @@ def handle_message(event: MessageEvent):
         return
 
     # カタログ案内
+    # 完全一致で新しい案内文を返信
     if "カタログ" in user_message or "catalog" in user_message.lower():
         send_catalog_info(event)
         return
 
-    # それ以外
+    # その他メッセージ
     line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text="メッセージありがとうございます。\n『カタログ』または『見積り』と入力すると詳細をお送りします。")
     )
 
-
 def send_catalog_info(event: MessageEvent):
     """
-    「カタログ」キーワードへの応答
+    カタログ案内メッセージ（ご指定の文面を完全一致で返す）
     """
-    form_url = "https://catalog-bot-1.onrender.com/catalog_form"
     reply_text = (
-        "【カタログ送付に関するご案内】\n\n"
-        "1. 無料請求応募方法について\n"
-        "InstagramまたはTikTokアカウントをフォローしてください。\n"
-        "Instagram: https://www.instagram.com/printmedia19\n"
-        "TikTok: https://www.tiktok.com/@printmedia_19\n"
-        "※カタログ送付数には限りがありますので\n"
-        "　サブアカウントなど使用しての重複申し込みはご遠慮下さい。\n\n"
-        "2. カタログ送付時期\n"
-        "2025年4月6日〜4月8日に郵送でお送りします。\n\n"
-        "3. 配布数について\n"
-        "現在：1000名様分を予定。超過した場合は\n"
-        "配布数増加または抽選となる可能性があります。\n\n"
-        "4. カタログ申し込みフォーム\n"
-        f"{form_url}"
+        "🎁 【クラTナビ最新カタログ無料プレゼント】 🎁 \n"
+        "クラスTシャツの最新デザインやトレンド情報が詰まったカタログを、期間限定で無料でお届けします✨\n\n"
+        "📚 1. 応募方法\n"
+        "以下の どちらかのアカウントをフォロー してください👇\n"
+        "📸 Instagram：https://www.instagram.com/graffitees_045/\n"
+        "🎥 TikTok： https://www.tiktok.com/@graffitees_045\n\n"
+        "👉 フォロー後、下記フォームからお申し込みください。\n"
+        "⚠️ 注意： サブアカウントや重複申し込みはご遠慮ください。\n\n"
+        "📦 2. カタログ発送時期\n"
+        "📅 2025年4月中旬～郵送で発送予定です。\n\n"
+        "🙌 3. 配布数について\n"
+        "先着 300名様分 を予定しています。\n"
+        "※応募が殺到した場合は、配布数の増加や抽選になる可能性があります。\n\n"
+        "📝 4. お申し込みはこちら\n"
+        "📩 カタログ申し込みフォーム：https://catalog-bot-1.onrender.com/catalog_form"
     )
     line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text=reply_text)
     )
 
-
+# -----------------------
+# 見積りフロー
+# -----------------------
 def start_estimate_flow(event: MessageEvent):
     """
-    見積りフローの最初のステップを開始
+    見積りフロー開始: ステップ1(使用日) へ
     """
     user_id = event.source.user_id
     user_estimate_sessions[user_id] = {
         "step": 1,
         "answers": {}
     }
-    # 最初の質問: 使用日
     line_bot_api.reply_message(
         event.reply_token,
         flex_usage_date()
     )
 
-
 def process_estimate_flow(event: MessageEvent, user_message: str):
     """
-    見積りフロー中のユーザの回答を処理して、次のステップを送る
+    見積フロー中のやり取り
     """
     user_id = event.source.user_id
     session_data = user_estimate_sessions[user_id]
     step = session_data["step"]
 
     if step == 1:
-        # 回答: 使用日 ("14日前以上" / "14日前以内")
+        # 1.使用日
         if user_message in ["14日前以上", "14日前以内"]:
             session_data["answers"]["usage_date"] = user_message
-            # 割引区分
             session_data["answers"]["discount_type"] = "早割" if user_message == "14日前以上" else "通常"
             session_data["step"] = 2
-
-            # 次の質問: 予算
-            line_bot_api.reply_message(
-                event.reply_token,
-                flex_budget()
-            )
+            line_bot_api.reply_message(event.reply_token, flex_budget())
         else:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="「14日前以上」または「14日前以内」を選択してください。")
-            )
-
+            line_bot_api.reply_message(event.reply_token,
+                TextSendMessage(text="「14日前以上」または「14日前以内」を選択してください。"))
     elif step == 2:
-        # 回答: 予算
+        # 2.1枚当たりの予算
         budgets = ["1,000円", "2,000円", "3,000円", "4,000円", "5,000円"]
         if user_message in budgets:
             session_data["answers"]["budget"] = user_message
             session_data["step"] = 3
-            # 次: 商品名
-            line_bot_api.reply_message(
-                event.reply_token,
-                flex_item_select()
-            )
+            line_bot_api.reply_message(event.reply_token, flex_item_select())
         else:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="ボタンから1枚あたりの予算を選択してください。")
-            )
-
+            line_bot_api.reply_message(event.reply_token,
+                TextSendMessage(text="1枚あたりの予算をボタンから選択してください。"))
     elif step == 3:
-        # 商品名
+        # 3.商品名
         items = [
             "ドライTシャツ","ヘビーウェイトTシャツ","ドライポロシャツ","ドライメッシュビブス",
             "ドライベースボールシャツ","ドライロングスリープTシャツ","ドライハーフパンツ",
@@ -783,92 +864,54 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
         if user_message in items:
             session_data["answers"]["item"] = user_message
             session_data["step"] = 4
-            # 次: 枚数
-            line_bot_api.reply_message(
-                event.reply_token,
-                flex_quantity()
-            )
+            line_bot_api.reply_message(event.reply_token, flex_quantity())
         else:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="該当商品のボタンを選択してください。")
-            )
-
+            line_bot_api.reply_message(event.reply_token,
+                TextSendMessage(text="商品名をボタンから選択してください。"))
     elif step == 4:
-        # 枚数
-        valid_choices = ["10","20","30","40","50以上"]
+        # 4.枚数
+        # ★修正： '50', '100' が追加されている
+        valid_choices = ["10","20","30","40","50","100"]
         if user_message in valid_choices:
-            if user_message == "50以上":
-                # 一律で100枚で計算する例
-                session_data["answers"]["quantity"] = "100"
-            else:
-                session_data["answers"]["quantity"] = user_message
+            # ここでは選んだ数字をそのまま採用
+            session_data["answers"]["quantity"] = user_message
             session_data["step"] = 5
-
-            # 次: プリント位置
-            line_bot_api.reply_message(
-                event.reply_token,
-                flex_print_position()
-            )
+            line_bot_api.reply_message(event.reply_token, flex_print_position())
         else:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="枚数をボタンから選択してください。")
-            )
-
+            line_bot_api.reply_message(event.reply_token,
+                TextSendMessage(text="枚数をボタンから選択してください。"))
     elif step == 5:
-        # プリント位置
+        # 5.プリント位置
         valid_positions = ["前のみ", "背中のみ", "前と背中"]
         if user_message in valid_positions:
             session_data["answers"]["print_position"] = user_message
             session_data["step"] = 6
-            # 次: 色数
-            line_bot_api.reply_message(
-                event.reply_token,
-                flex_color_count()
-            )
+            line_bot_api.reply_message(event.reply_token, flex_color_count())
         else:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="プリント位置を選択してください。")
-            )
-
+            line_bot_api.reply_message(event.reply_token,
+                TextSendMessage(text="プリント位置を選択してください。"))
     elif step == 6:
-        # 色数
+        # 6.色数
         color_list = list(COLOR_COST_MAP.keys())
         if user_message in color_list:
             session_data["answers"]["color_count"] = user_message
             session_data["step"] = 7
-            # 次: 背ネーム
-            line_bot_api.reply_message(
-                event.reply_token,
-                flex_back_name()
-            )
+            line_bot_api.reply_message(event.reply_token, flex_back_name())
         else:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="色数を選択してください。")
-            )
-
+            line_bot_api.reply_message(event.reply_token,
+                TextSendMessage(text="色数を選択してください。"))
     elif step == 7:
-        # 背ネーム
+        # 7.背ネーム・番号
         valid_back_names = ["ネーム&背番号セット", "ネーム(大)", "番号(大)", "背ネーム・番号を使わない"]
         if user_message in valid_back_names:
             session_data["answers"]["back_name"] = user_message
-            # これで回答が出揃った
             session_data["step"] = 8
-
-            # 見積計算
+            # 計算
             est_data = session_data["answers"]
             quantity = int(est_data["quantity"])
             total_price, unit_price = calculate_estimate(est_data)
+            quote_number = write_estimate_to_spreadsheet(user_id, est_data, total_price, unit_price)
 
-            # スプレッドシート書き込み
-            quote_number = write_estimate_to_spreadsheet(
-                user_id, est_data, total_price, unit_price
-            )
-
-            # ユーザへ結果返信
             reply_text = (
                 f"お見積りが完了しました。\n\n"
                 f"見積番号: {quote_number}\n"
@@ -878,32 +921,23 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
                 f"枚数: {quantity}枚\n"
                 f"プリント位置: {est_data['print_position']}\n"
                 f"色数: {est_data['color_count']}\n"
-                f"背ネーム: {est_data['back_name']}\n\n"
+                f"背ネーム・番号: {est_data['back_name']}\n\n"
                 f"【合計金額】¥{total_price:,}\n"
                 f"【1枚あたり】¥{unit_price:,}\n"
             )
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=reply_text)
-            )
-            # フロー終了（セッション削除）
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+
+            # フロー終了
             del user_estimate_sessions[user_id]
         else:
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="背ネームを選択してください。")
-            )
-
+            line_bot_api.reply_message(event.reply_token,
+                TextSendMessage(text="背ネーム・番号の選択肢からお選びください。"))
     else:
-        # 想定外
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text="見積の回答処理でエラーが発生しました。最初からやり直してください。")
-        )
-        # セッションリセット
+        # それ以外
+        line_bot_api.reply_message(event.reply_token,
+            TextSendMessage(text="エラーが発生しました。最初からやり直してください。"))
         if user_id in user_estimate_sessions:
             del user_estimate_sessions[user_id]
-
 
 # -----------------------
 # 3) カタログ申し込みフォーム表示 (GET)
@@ -1031,7 +1065,6 @@ def submit_catalog_form():
         return f"エラーが発生しました: {e}", 500
 
     return "フォーム送信ありがとうございました！ カタログ送付をお待ちください。", 200
-
 
 # -----------------------
 # 動作確認用
