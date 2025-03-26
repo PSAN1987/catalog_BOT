@@ -414,7 +414,7 @@ def flex_usage_date():
                 },
                 {
                     "type": "text",
-                    "text": "大会やイベントで使用する日程を教えてください。(注文日から14日前以上なら早割)",
+                    "text": "大会やイベントで使用する日程を教えてください。(注文日が14日前以上なら早割)",
                     "size": "sm",
                     "wrap": True
                 }
@@ -821,7 +821,7 @@ def handle_message(event: MessageEvent):
         return
 
     # 見積りフロー開始
-    if user_message == "見積り":
+    if user_message == "#見積り#":
         start_estimate_flow(event)
         return
 
@@ -831,11 +831,8 @@ def handle_message(event: MessageEvent):
         send_catalog_info(event)
         return
 
-    # その他メッセージ
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text="メッセージありがとうございます。\n『カタログ』または『見積り』と入力すると詳細をお送りします。")
-    )
+    # その他のメッセージ
+    return
 
 def send_catalog_info(event: MessageEvent):
     """
