@@ -821,7 +821,7 @@ def handle_message(event: MessageEvent):
         return
 
     # 見積りフロー開始
-    if user_message == "#見積り#":
+    if user_message == "お見積り":
         start_estimate_flow(event)
         return
 
