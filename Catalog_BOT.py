@@ -62,11 +62,12 @@ def get_or_create_worksheet(sheet, title):
         ws = sheet.add_worksheet(title=title, rows=2000, cols=20)
         # 必要であればヘッダをセット
         if title == "CatalogRequests":
-            ws.update('A1:H1', [[
-                "氏名", "郵便番号", "住所", "電話番号",
-                "メールアドレス", "Insta/TikTok名",
-                "在籍予定の学校名と学年", "その他(質問・要望)"
-            ]])
+            ws.update('A1:I1', [[
+            "日時",  # ←先頭に日時列
+            "氏名", "郵便番号", "住所", "電話番号",
+            "メールアドレス", "Insta/TikTok名",
+            "在籍予定の学校名と学年", "その他(質問・要望)"
+    ]])
         elif title == "簡易見積":
             ws.update('A1:L1', [[
                 "日時", "見積番号", "ユーザーID",
@@ -78,14 +79,16 @@ def get_or_create_worksheet(sheet, title):
 
 
 def write_to_spreadsheet_for_catalog(form_data: dict):
-    """
-    カタログ請求フォーム送信のデータをスプレッドシートに1行追加する
-    """
     gc = get_gspread_client()
     sh = gc.open_by_key(SPREADSHEET_KEY)
     worksheet = get_or_create_worksheet(sh, "CatalogRequests")
 
+    # 日本時間の現在時刻
+    jst = pytz.timezone('Asia/Tokyo')
+    now_jst_str = datetime.now(jst).strftime("%Y/%m/%d %H:%M:%S")
+
     new_row = [
+        now_jst_str,  # 先頭に日時を追加
         form_data.get("name", ""),
         form_data.get("postal_code", ""),
         form_data.get("address", ""),
@@ -96,7 +99,6 @@ def write_to_spreadsheet_for_catalog(form_data: dict):
         form_data.get("other", ""),
     ]
     worksheet.append_row(new_row, value_input_option="USER_ENTERED")
-
 
 # -----------------------
 # 簡易見積用データ構造
