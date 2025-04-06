@@ -610,7 +610,7 @@ def flex_inquiry():
                     "type": "image",
                     "url": "https://catalog-bot-zf1t.onrender.com/IMG_5765.PNG",
                     "size": "full",
-                    "aspectRatio": "20:13",
+                    "aspectRatio": "501:556",
                     "aspectMode": "cover",
                     "action": {
                         "type": "uri",
@@ -625,7 +625,7 @@ def flex_inquiry():
                     "type": "image",
                     "url": "https://catalog-bot-zf1t.onrender.com/IMG_5766.PNG",
                     "size": "full",
-                    "aspectRatio": "20:13",
+                    "aspectRatio": "501:556",
                     "aspectMode": "cover",
                     "action": {
                         "type": "message",
