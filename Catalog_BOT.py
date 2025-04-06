@@ -96,7 +96,7 @@ def write_to_spreadsheet_for_catalog(form_data: dict):
 # -----------------------
 # 簡易見積用データ構造
 # -----------------------
-from price_table_2025 import PRICE_TABLE, COLOR_COST_MAP
+from PRICE_TABLE_2025 import PRICE_TABLE, COLOR_COST_MAP
 
 # ユーザの見積フロー管理用（簡易的セッション）
 user_estimate_sessions = {}  # { user_id: {"step": n, "answers": {...}} }
