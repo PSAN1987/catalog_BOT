@@ -745,7 +745,7 @@ def send_catalog_info(event: MessageEvent):
 # -----------------------
 # 見積りフロー
 # -----------------------
-def start_estimate_flow(event: MessageEvent, user_message: str):
+def start_estimate_flow(event: MessageEvent):
     """
     見積フロー中のやり取り
     """
