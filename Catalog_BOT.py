@@ -747,9 +747,33 @@ def send_catalog_info(event: MessageEvent):
 # -----------------------
 def start_estimate_flow(event: MessageEvent):
     """
-    見積フロー中のやり取り
+    見積フローを開始し、step=1(使用日)を提示する
     """
     user_id = event.source.user_id
+
+    # セッションを初期化
+    user_estimate_sessions[user_id] = {
+        "step": 1,
+        "answers": {}
+    }
+
+    # 最初のステップ（使用日選択Flex）を送る
+    line_bot_api.reply_message(
+        event.reply_token,
+        flex_usage_date()
+    )
+
+
+def process_estimate_flow(event: MessageEvent, user_message: str):
+    """
+    見積フロー中のやり取り (step 1～7)
+    """
+    user_id = event.source.user_id
+
+    # セッションがない場合は何もしない
+    if user_id not in user_estimate_sessions:
+        return
+
     session_data = user_estimate_sessions[user_id]
     step = session_data["step"]
 
@@ -761,7 +785,7 @@ def start_estimate_flow(event: MessageEvent):
             session_data["step"] = 2
             line_bot_api.reply_message(event.reply_token, flex_budget())
         else:
-            # ▼ 期待外の入力：セッション破棄
+            # 期待外の入力：セッション破棄
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
@@ -777,7 +801,6 @@ def start_estimate_flow(event: MessageEvent):
             session_data["step"] = 3
             line_bot_api.reply_message(event.reply_token, flex_item_select())
         else:
-            # ▼ 期待外の入力：セッション破棄
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
@@ -806,7 +829,6 @@ def start_estimate_flow(event: MessageEvent):
             session_data["step"] = 4
             line_bot_api.reply_message(event.reply_token, flex_quantity())
         else:
-            # ▼ 期待外の入力：セッション破棄
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
@@ -822,7 +844,6 @@ def start_estimate_flow(event: MessageEvent):
             session_data["step"] = 5
             line_bot_api.reply_message(event.reply_token, flex_print_position())
         else:
-            # ▼ 期待外の入力：セッション破棄
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
@@ -838,7 +859,6 @@ def start_estimate_flow(event: MessageEvent):
             session_data["step"] = 6
             line_bot_api.reply_message(event.reply_token, flex_color_count())
         else:
-            # ▼ 期待外の入力：セッション破棄
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
@@ -854,7 +874,6 @@ def start_estimate_flow(event: MessageEvent):
             session_data["step"] = 7
             line_bot_api.reply_message(event.reply_token, flex_back_name())
         else:
-            # ▼ 期待外の入力：セッション破棄
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
@@ -896,7 +915,6 @@ def start_estimate_flow(event: MessageEvent):
             # フロー終了
             del user_estimate_sessions[user_id]
         else:
-            # ▼ 期待外の入力：セッション破棄
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
@@ -905,7 +923,7 @@ def start_estimate_flow(event: MessageEvent):
         return
 
     else:
-        # 何らかの想定外のエラー（stepが想定値でない）
+        # 何らかの想定外のエラー
         del user_estimate_sessions[user_id]
         line_bot_api.reply_message(
             event.reply_token,
