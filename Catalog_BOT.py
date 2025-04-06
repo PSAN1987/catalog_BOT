@@ -700,13 +700,13 @@ def handle_message(event: MessageEvent):
         return
 
     # 見積りフロー開始
-    if user_message == "お見積り":
+    if user_message == "カンタン見積り":
         start_estimate_flow(event)
         return
 
     # カタログ案内
     # 完全一致で案内文を返信
-    if "カタログ" in user_message or "catalog" in user_message.lower():
+    if "キャンペーン" in user_message or "catalog" in user_message.lower():
         send_catalog_info(event)
         return
 
