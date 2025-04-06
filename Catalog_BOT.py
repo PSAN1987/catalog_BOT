@@ -745,21 +745,6 @@ def send_catalog_info(event: MessageEvent):
 # -----------------------
 # 見積りフロー
 # -----------------------
-def start_estimate_flow(event: MessageEvent):
-    """
-    見積りフロー開始: ステップ1(使用日) へ
-    """
-    user_id = event.source.user_id
-    user_estimate_sessions[user_id] = {
-        "step": 1,
-        "answers": {}
-    }
-    line_bot_api.reply_message(
-        event.reply_token,
-        flex_usage_date()
-    )
-
-
 def process_estimate_flow(event: MessageEvent, user_message: str):
     """
     見積フロー中のやり取り
@@ -768,32 +753,40 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
     session_data = user_estimate_sessions[user_id]
     step = session_data["step"]
 
+    # 1) 使用日
     if step == 1:
-        # 1.使用日
         if user_message in ["14日前以上", "14日前以内"]:
             session_data["answers"]["usage_date"] = user_message
             session_data["answers"]["discount_type"] = "早割" if user_message == "14日前以上" else "通常"
             session_data["step"] = 2
             line_bot_api.reply_message(event.reply_token, flex_budget())
         else:
+            # ▼ 期待外の入力：セッション破棄
+            del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="「14日前以上」または「14日前以内」を選択してください。")
+                TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
             )
+        return
+
+    # 2) 1枚当たりの予算
     elif step == 2:
-        # 2.1枚当たりの予算
         budgets = ["1,000円", "2,000円", "3,000円", "4,000円", "5,000円"]
         if user_message in budgets:
             session_data["answers"]["budget"] = user_message
             session_data["step"] = 3
             line_bot_api.reply_message(event.reply_token, flex_item_select())
         else:
+            # ▼ 期待外の入力：セッション破棄
+            del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="1枚あたりの予算をボタンから選択してください。")
+                TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
             )
+        return
+
+    # 3) 商品名
     elif step == 3:
-        # 3.商品名
         items = [
             "ゲームシャツ",
             "ストライプドライベースボールシャツ",
@@ -813,52 +806,69 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             session_data["step"] = 4
             line_bot_api.reply_message(event.reply_token, flex_quantity())
         else:
+            # ▼ 期待外の入力：セッション破棄
+            del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="商品名をボタンから選択してください。")
+                TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
             )
+        return
+
+    # 4) 枚数
     elif step == 4:
-        # 4.枚数
         valid_choices = ["10", "20", "30", "40", "50", "100"]
         if user_message in valid_choices:
             session_data["answers"]["quantity"] = user_message
             session_data["step"] = 5
             line_bot_api.reply_message(event.reply_token, flex_print_position())
         else:
+            # ▼ 期待外の入力：セッション破棄
+            del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="枚数をボタンから選択してください。")
+                TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
             )
+        return
+
+    # 5) プリント位置
     elif step == 5:
-        # 5.プリント位置
         valid_positions = ["前のみ", "背中のみ", "前と背中"]
         if user_message in valid_positions:
             session_data["answers"]["print_position"] = user_message
             session_data["step"] = 6
             line_bot_api.reply_message(event.reply_token, flex_color_count())
         else:
+            # ▼ 期待外の入力：セッション破棄
+            del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="プリント位置を選択してください。")
+                TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
             )
+        return
+
+    # 6) 色数
     elif step == 6:
-        # 6.色数
         color_list = list(COLOR_COST_MAP.keys())
         if user_message in color_list:
             session_data["answers"]["color_count"] = user_message
             session_data["step"] = 7
             line_bot_api.reply_message(event.reply_token, flex_back_name())
         else:
+            # ▼ 期待外の入力：セッション破棄
+            del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="色数を選択してください。")
+                TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
             )
+        return
+
+    # 7) 背ネーム・番号
     elif step == 7:
-        # 7.背ネーム・番号
         valid_back_names = ["ネーム&背番号セット", "ネーム(大)", "番号(大)", "背ネーム・番号を使わない"]
         if user_message in valid_back_names:
             session_data["answers"]["back_name"] = user_message
             session_data["step"] = 8
+
             # 見積計算
             est_data = session_data["answers"]
             quantity = int(est_data["quantity"])
@@ -882,21 +892,27 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
                 event.reply_token,
                 TextSendMessage(text=reply_text)
             )
+
             # フロー終了
             del user_estimate_sessions[user_id]
         else:
+            # ▼ 期待外の入力：セッション破棄
+            del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="背ネーム・番号の選択肢からお選びください。")
+                TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
             )
+        return
+
     else:
-        # それ以外
+        # 何らかの想定外のエラー（stepが想定値でない）
+        del user_estimate_sessions[user_id]
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text="エラーが発生しました。最初からやり直してください。")
+            TextSendMessage(text="エラーが発生しました。見積りフローを終了しました。最初からやり直してください。")
         )
-        if user_id in user_estimate_sessions:
-            del user_estimate_sessions[user_id]
+        return
+
 
 
 # -----------------------
