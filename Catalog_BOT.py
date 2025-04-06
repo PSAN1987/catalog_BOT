@@ -608,7 +608,6 @@ def flex_inquiry():
                 "type": "bubble",
                 "hero": {
                     "type": "image",
-                    # ↓raw.githubusercontent.com のURLを指定
                     "url": "https://catalog-bot-zf1t.onrender.com/IMG_5765.PNG",
                     "size": "full",
                     "aspectRatio": "20:13",
@@ -617,18 +616,6 @@ def flex_inquiry():
                         "type": "uri",
                         "uri": "https://graffitees.jp/faq/"
                     }
-                },
-                "body": {
-                    "type": "box",
-                    "layout": "vertical",
-                    "contents": [
-                        {
-                            "type": "text",
-                            "text": "FAQはこちら",
-                            "size": "md",
-                            "weight": "bold"
-                        }
-                    ]
                 }
             },
             # 2個目: 有人チャット
@@ -644,18 +631,6 @@ def flex_inquiry():
                         "type": "message",
                         "text": "#有人チャット"
                     }
-                },
-                "body": {
-                    "type": "box",
-                    "layout": "vertical",
-                    "contents": [
-                        {
-                            "type": "text",
-                            "text": "オペレーター対応",
-                            "size": "md",
-                            "weight": "bold"
-                        }
-                    ]
                 }
             }
         ]
