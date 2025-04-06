@@ -669,7 +669,7 @@ def handle_message(event: MessageEvent):
     user_message = event.message.text.strip()
 
     # 1) お問い合わせ対応
-    if user_message == "#お問い合わせ":
+    if user_message == "お問い合わせ":
         line_bot_api.reply_message(
             event.reply_token,
             flex_inquiry()
