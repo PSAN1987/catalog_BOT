@@ -26,6 +26,7 @@ SPREADSHEET_KEY = os.environ.get("SPREADSHEET_KEY", "")
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
+
 # -----------------------
 # Google Sheets 接続
 # -----------------------
@@ -46,6 +47,7 @@ def get_gspread_client():
     ]
     credentials = ServiceAccountCredentials.from_json_keyfile_dict(service_account_dict, scope)
     return gspread.authorize(credentials)
+
 
 def get_or_create_worksheet(sheet, title):
     """
@@ -72,6 +74,7 @@ def get_or_create_worksheet(sheet, title):
             ]])
     return ws
 
+
 def write_to_spreadsheet_for_catalog(form_data: dict):
     """
     カタログ請求フォーム送信のデータをスプレッドシートに1行追加する
@@ -96,10 +99,12 @@ def write_to_spreadsheet_for_catalog(form_data: dict):
 # -----------------------
 # 簡易見積用データ構造
 # -----------------------
+# PRICE_TABLE_2025.py から PRICE_TABLE, COLOR_COST_MAP を import
 from PRICE_TABLE_2025 import PRICE_TABLE, COLOR_COST_MAP
 
 # ユーザの見積フロー管理用（簡易的セッション）
 user_estimate_sessions = {}  # { user_id: {"step": n, "answers": {...}} }
+
 
 def write_estimate_to_spreadsheet(user_id, estimate_data, total_price, unit_price):
     """
@@ -129,6 +134,7 @@ def write_estimate_to_spreadsheet(user_id, estimate_data, total_price, unit_pric
 
     return quote_number
 
+
 def find_price_row(item_name, discount_type, quantity):
     """
     PRICE_TABLE から該当する行を探し返す。該当しない場合は None
@@ -139,6 +145,7 @@ def find_price_row(item_name, discount_type, quantity):
             and row["min_qty"] <= quantity <= row["max_qty"]):
             return row
     return None
+
 
 def calculate_estimate(estimate_data):
     """
@@ -153,7 +160,7 @@ def calculate_estimate(estimate_data):
 
     row = find_price_row(item_name, discount_type, quantity)
     if row is None:
-        return 0, 0  # 見つからない場合
+        return 0, 0  # 該当無し
 
     base_price = row["unit_price"]
 
@@ -175,7 +182,6 @@ def calculate_estimate(estimate_data):
     elif back_name == "番号(大)":
         back_name_fee = row["big_num"]
     else:
-        # 背ネーム・番号を使わない
         back_name_fee = 0
 
     unit_price = base_price + pos_add + color_fee + back_name_fee
@@ -186,7 +192,10 @@ def calculate_estimate(estimate_data):
 
 from linebot.models import FlexSendMessage
 
-from linebot.models import FlexSendMessage
+
+# -----------------------
+# ここからFlex Message定義
+# -----------------------
 
 def flex_usage_date():
     """
@@ -194,7 +203,6 @@ def flex_usage_date():
     """
     flex_body = {
         "type": "bubble",
-        # タイトルと説明文を hero 部分に配置
         "hero": {
             "type": "box",
             "layout": "vertical",
@@ -204,7 +212,7 @@ def flex_usage_date():
                     "text": "❶使用日",
                     "weight": "bold",
                     "size": "lg",
-                    "align": "center"    # ★中央揃え
+                    "align": "center"
                 },
                 {
                     "type": "text",
@@ -214,7 +222,6 @@ def flex_usage_date():
                 }
             ]
         },
-        # ボタン群を footer に配置
         "footer": {
             "type": "box",
             "layout": "vertical",
@@ -276,7 +283,7 @@ def flex_budget():
                     "text": "❷1枚当たりの予算",
                     "weight": "bold",
                     "size": "lg",
-                    "align": "center"    # ★中央揃え
+                    "align": "center"
                 },
                 {
                     "type": "text",
@@ -302,25 +309,24 @@ def flex_item_select():
     ❸商品名
     """
     items = [
-    "ゲームシャツ",
-    "ストライプドライベースボールシャツ",
-    "ドライベースボールシャツ",
-    "ストライプユニフォーム",
-    "バスケシャツ",
-    "ドライTシャツ",
-    "ハイクオリティTシャツ",
-    "ドライポロシャツ",
-    "ドライロングスリープTシャツ",
-    "クルーネックライトトレーナー",
-    "ジップアップライトパーカー",
-    "フーデッドライトパーカー",
+        "ゲームシャツ",
+        "ストライプドライベースボールシャツ",
+        "ドライベースボールシャツ",
+        "ストライプユニフォーム",
+        "バスケシャツ",
+        "ドライTシャツ",
+        "ハイクオリティTシャツ",
+        "ドライポロシャツ",
+        "ドライロングスリープTシャツ",
+        "クルーネックライトトレーナー",
+        "ジップアップライトパーカー",
+        "フーデッドライトパーカー",
     ]
 
-    # 商品リストを分割しながら、複数のbubbleを束ねたcarouselを作る
     item_bubbles = []
     chunk_size = 5
     for i in range(0, len(items), chunk_size):
-        chunk_part = items[i:i+chunk_size]
+        chunk_part = items[i:i + chunk_size]
         buttons = []
         for it in chunk_part:
             buttons.append({
@@ -333,7 +339,6 @@ def flex_item_select():
                     "text": it
                 }
             })
-        # 各bubbleにも hero と footer を設置
         bubble = {
             "type": "bubble",
             "hero": {
@@ -345,7 +350,7 @@ def flex_item_select():
                         "text": "❸商品名",
                         "weight": "bold",
                         "size": "lg",
-                        "align": "center"    # ★中央揃え
+                        "align": "center"
                     },
                     {
                         "type": "text",
@@ -355,7 +360,6 @@ def flex_item_select():
                     }
                 ]
             },
-            # body を空にし、footer にボタンを置く
             "footer": {
                 "type": "box",
                 "layout": "vertical",
@@ -401,7 +405,7 @@ def flex_quantity():
                     "text": "❹枚数",
                     "weight": "bold",
                     "size": "lg",
-                    "align": "center"    # ★中央揃え
+                    "align": "center"
                 },
                 {
                     "type": "text",
@@ -450,7 +454,7 @@ def flex_print_position():
                     "text": "❺プリント位置",
                     "weight": "bold",
                     "size": "lg",
-                    "align": "center"   # ★中央揃え
+                    "align": "center"
                 },
                 {
                     "type": "text",
@@ -487,7 +491,7 @@ def flex_color_count():
     chunk_size = 4
     color_bubbles = []
     for i in range(0, len(color_list), chunk_size):
-        chunk_part = color_list[i:i+chunk_size]
+        chunk_part = color_list[i:i + chunk_size]
         buttons = []
         for c in chunk_part:
             buttons.append({
@@ -496,7 +500,7 @@ def flex_color_count():
                 "height": "sm",
                 "action": {
                     "type": "message",
-                    "label": c[:12],  # 表示ラベルが長い場合に短縮
+                    "label": c[:12],  # ラベル文字数制限への対策
                     "text": c
                 }
             })
@@ -511,7 +515,7 @@ def flex_color_count():
                         "text": "❻色数",
                         "weight": "bold",
                         "size": "lg",
-                        "align": "center"   # ★中央揃え
+                        "align": "center"
                     },
                     {
                         "type": "text",
@@ -566,7 +570,7 @@ def flex_back_name():
                     "text": "❼背ネーム・番号",
                     "weight": "bold",
                     "size": "lg",
-                    "align": "center"   # ★中央揃え
+                    "align": "center"
                 },
                 {
                     "type": "text",
@@ -592,6 +596,81 @@ def flex_back_name():
     return FlexSendMessage(alt_text="背ネーム・番号を選択してください", contents=flex_body)
 
 
+# -----------------------
+# お問い合わせ時に返信するFlex Message
+# -----------------------
+def flex_inquiry():
+    """
+    #お問い合わせ と送られたときに返すFlex Message。
+    横にスライドする表示（carousel）にして、2つのbubbleを並べる。
+      1) FAQ
+         - 画像: IMG_5765.PNG
+         - タップ → https://graffitees.jp/faq/ (URIアクション)
+      2) 有人チャット
+         - 画像: IMG_5766.PNG
+         - タップ → #有人チャット (messageアクション)
+    """
+    contents = {
+        "type": "carousel",
+        "contents": [
+            # 1個目: FAQ
+            {
+                "type": "bubble",
+                "hero": {
+                    "type": "image",
+                    "url": "https://github.com/PSAN1987/catalog_BOT/blob/main/IMG_5765.PNG",  # IMG_5765.PNGの実ホストURLを指定
+                    "size": "full",
+                    "aspectRatio": "20:13",
+                    "aspectMode": "cover",
+                    "action": {
+                        "type": "uri",
+                        "uri": "https://graffitees.jp/faq/"
+                    }
+                },
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "FAQはこちら",
+                            "size": "md",
+                            "weight": "bold"
+                        }
+                    ]
+                }
+            },
+            # 2個目: 有人チャット
+            {
+                "type": "bubble",
+                "hero": {
+                    "type": "image",
+                    "url": "https://github.com/PSAN1987/catalog_BOT/blob/main/IMG_5766.PNG",  # IMG_5766.PNGの実ホストURLを指定
+                    "size": "full",
+                    "aspectRatio": "20:13",
+                    "aspectMode": "cover",
+                    "action": {
+                        "type": "message",
+                        "text": "#有人チャット"
+                    }
+                },
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "オペレーター対応",
+                            "size": "md",
+                            "weight": "bold"
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+    return FlexSendMessage(alt_text="お問い合わせ情報", contents=contents)
+
 
 # -----------------------
 # 1) LINE Messaging API 受信 (Webhook)
@@ -608,6 +687,7 @@ def line_callback():
 
     return "OK", 200
 
+
 # -----------------------
 # 2) LINE上でメッセージ受信時
 # -----------------------
@@ -615,6 +695,32 @@ def line_callback():
 def handle_message(event: MessageEvent):
     user_id = event.source.user_id
     user_message = event.message.text.strip()
+
+    # 1) お問い合わせ対応
+    if user_message == "#お問い合わせ":
+        line_bot_api.reply_message(
+            event.reply_token,
+            flex_inquiry()
+        )
+        return
+
+    # 2) 有人チャット
+    if user_message == "#有人チャット":
+        # 指定されたメッセージを返信
+        reply_text = (
+            "有人チャットに接続いたします。\n"
+            "ご検討中のデザインを画像やイラストでお送りください。\n\n"
+            "※当ショップの営業時間は10：00～18：00となります。\n"
+            "営業時間外のお問い合わせにつきましては確認ができ次第の回答となります。\n"
+            "誠に恐れ入りますが、ご了承くださいませ。\n\n"
+            "その他ご要望などがございましたらメッセージでお送りくださいませ。\n"
+            "よろしくお願い致します。"
+        )
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=reply_text)
+        )
+        return
 
     # すでに見積りフロー中かどうか
     if user_id in user_estimate_sessions and user_estimate_sessions[user_id]["step"] > 0:
@@ -627,13 +733,14 @@ def handle_message(event: MessageEvent):
         return
 
     # カタログ案内
-    # 完全一致で新しい案内文を返信
+    # 完全一致で案内文を返信
     if "カタログ" in user_message or "catalog" in user_message.lower():
         send_catalog_info(event)
         return
 
-    # その他のメッセージ
+    # その他のメッセージはスルー
     return
+
 
 def send_catalog_info(event: MessageEvent):
     """
@@ -668,6 +775,7 @@ def send_catalog_info(event: MessageEvent):
         TextSendMessage(text=reply_text)
     )
 
+
 # -----------------------
 # 見積りフロー
 # -----------------------
@@ -685,6 +793,7 @@ def start_estimate_flow(event: MessageEvent):
         flex_usage_date()
     )
 
+
 def process_estimate_flow(event: MessageEvent, user_message: str):
     """
     見積フロー中のやり取り
@@ -701,8 +810,10 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             session_data["step"] = 2
             line_bot_api.reply_message(event.reply_token, flex_budget())
         else:
-            line_bot_api.reply_message(event.reply_token,
-                TextSendMessage(text="「14日前以上」または「14日前以内」を選択してください。"))
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="「14日前以上」または「14日前以内」を選択してください。")
+            )
     elif step == 2:
         # 2.1枚当たりの予算
         budgets = ["1,000円", "2,000円", "3,000円", "4,000円", "5,000円"]
@@ -711,8 +822,10 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             session_data["step"] = 3
             line_bot_api.reply_message(event.reply_token, flex_item_select())
         else:
-            line_bot_api.reply_message(event.reply_token,
-                TextSendMessage(text="1枚あたりの予算をボタンから選択してください。"))
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="1枚あたりの予算をボタンから選択してください。")
+            )
     elif step == 3:
         # 3.商品名
         items = [
@@ -734,20 +847,22 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             session_data["step"] = 4
             line_bot_api.reply_message(event.reply_token, flex_quantity())
         else:
-            line_bot_api.reply_message(event.reply_token,
-                TextSendMessage(text="商品名をボタンから選択してください。"))
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="商品名をボタンから選択してください。")
+            )
     elif step == 4:
         # 4.枚数
-        # ★修正： '50', '100' が追加されている
-        valid_choices = ["10","20","30","40","50","100"]
+        valid_choices = ["10", "20", "30", "40", "50", "100"]
         if user_message in valid_choices:
-            # ここでは選んだ数字をそのまま採用
             session_data["answers"]["quantity"] = user_message
             session_data["step"] = 5
             line_bot_api.reply_message(event.reply_token, flex_print_position())
         else:
-            line_bot_api.reply_message(event.reply_token,
-                TextSendMessage(text="枚数をボタンから選択してください。"))
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="枚数をボタンから選択してください。")
+            )
     elif step == 5:
         # 5.プリント位置
         valid_positions = ["前のみ", "背中のみ", "前と背中"]
@@ -756,8 +871,10 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             session_data["step"] = 6
             line_bot_api.reply_message(event.reply_token, flex_color_count())
         else:
-            line_bot_api.reply_message(event.reply_token,
-                TextSendMessage(text="プリント位置を選択してください。"))
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="プリント位置を選択してください。")
+            )
     elif step == 6:
         # 6.色数
         color_list = list(COLOR_COST_MAP.keys())
@@ -766,15 +883,17 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             session_data["step"] = 7
             line_bot_api.reply_message(event.reply_token, flex_back_name())
         else:
-            line_bot_api.reply_message(event.reply_token,
-                TextSendMessage(text="色数を選択してください。"))
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="色数を選択してください。")
+            )
     elif step == 7:
         # 7.背ネーム・番号
         valid_back_names = ["ネーム&背番号セット", "ネーム(大)", "番号(大)", "背ネーム・番号を使わない"]
         if user_message in valid_back_names:
             session_data["answers"]["back_name"] = user_message
             session_data["step"] = 8
-            # 計算
+            # 見積計算
             est_data = session_data["answers"]
             quantity = int(est_data["quantity"])
             total_price, unit_price = calculate_estimate(est_data)
@@ -793,19 +912,26 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
                 f"【合計金額】¥{total_price:,}\n"
                 f"【1枚あたり】¥{unit_price:,}\n"
             )
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
-
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=reply_text)
+            )
             # フロー終了
             del user_estimate_sessions[user_id]
         else:
-            line_bot_api.reply_message(event.reply_token,
-                TextSendMessage(text="背ネーム・番号の選択肢からお選びください。"))
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="背ネーム・番号の選択肢からお選びください。")
+            )
     else:
         # それ以外
-        line_bot_api.reply_message(event.reply_token,
-            TextSendMessage(text="エラーが発生しました。最初からやり直してください。"))
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="エラーが発生しました。最初からやり直してください。")
+        )
         if user_id in user_estimate_sessions:
             del user_estimate_sessions[user_id]
+
 
 # -----------------------
 # 3) カタログ申し込みフォーム表示 (GET)
@@ -911,6 +1037,7 @@ def show_catalog_form():
 """
     return render_template_string(html_content)
 
+
 # -----------------------
 # 4) カタログ申し込みフォームの送信処理
 # -----------------------
@@ -933,6 +1060,7 @@ def submit_catalog_form():
         return f"エラーが発生しました: {e}", 500
 
     return "フォーム送信ありがとうございました！ カタログ送付をお待ちください。", 200
+
 
 # -----------------------
 # 動作確認用
