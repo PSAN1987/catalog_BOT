@@ -600,16 +600,6 @@ def flex_back_name():
 # お問い合わせ時に返信するFlex Message
 # -----------------------
 def flex_inquiry():
-    """
-    #お問い合わせ と送られたときに返すFlex Message。
-    横にスライドする表示（carousel）にして、2つのbubbleを並べる。
-      1) FAQ
-         - 画像: IMG_5765.PNG
-         - タップ → https://graffitees.jp/faq/ (URIアクション)
-      2) 有人チャット
-         - 画像: IMG_5766.PNG
-         - タップ → #有人チャット (messageアクション)
-    """
     contents = {
         "type": "carousel",
         "contents": [
@@ -618,7 +608,8 @@ def flex_inquiry():
                 "type": "bubble",
                 "hero": {
                     "type": "image",
-                    "url": "https://github.com/PSAN1987/catalog_BOT/blob/main/IMG_5765.PNG",  # IMG_5765.PNGの実ホストURLを指定
+                    # ↓raw.githubusercontent.com のURLを指定
+                    "url": "https://raw.githubusercontent.com/PSAN1987/catalog_BOT/main/IMG_5765.PNG",
                     "size": "full",
                     "aspectRatio": "20:13",
                     "aspectMode": "cover",
@@ -645,7 +636,7 @@ def flex_inquiry():
                 "type": "bubble",
                 "hero": {
                     "type": "image",
-                    "url": "https://github.com/PSAN1987/catalog_BOT/blob/main/IMG_5766.PNG",  # IMG_5766.PNGの実ホストURLを指定
+                    "url": "https://raw.githubusercontent.com/PSAN1987/catalog_BOT/main/IMG_5766.PNG",
                     "size": "full",
                     "aspectRatio": "20:13",
                     "aspectMode": "cover",
