@@ -1,6 +1,8 @@
 ﻿import os
 import json
 import time
+from datetime import datetime
+import pytz
 
 import gspread
 from flask import Flask, request, abort, render_template_string
@@ -115,9 +117,13 @@ def write_estimate_to_spreadsheet(user_id, estimate_data, total_price, unit_pric
     worksheet = get_or_create_worksheet(sh, "簡易見積")
 
     quote_number = str(int(time.time()))  # 見積番号を UNIX時間 で仮生成
+    
+    # ▼ ここを日本時間に変更
+    jst = pytz.timezone('Asia/Tokyo')
+    now_jst_str = datetime.now(jst).strftime("%Y/%m/%d %H:%M:%S")
 
     new_row = [
-        time.strftime("%Y/%m/%d %H:%M:%S"),
+        now_jst_str,  # ← time.strftime の代わりに日本時間文字列を使う
         quote_number,
         user_id,
         f"{estimate_data['usage_date']}({estimate_data['discount_type']})",
