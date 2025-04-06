@@ -609,7 +609,7 @@ def flex_inquiry():
                 "hero": {
                     "type": "image",
                     # ↓raw.githubusercontent.com のURLを指定
-                    "url": "https://catalog-bot-zf1t.onrender.com/images/IMG_5765.PNG",
+                    "url": "https://catalog-bot-zf1t.onrender.com/IMG_5765.PNG",
                     "size": "full",
                     "aspectRatio": "20:13",
                     "aspectMode": "cover",
@@ -636,7 +636,7 @@ def flex_inquiry():
                 "type": "bubble",
                 "hero": {
                     "type": "image",
-                    "url": "https://catalog-bot-zf1t.onrender.com/images/IMG_5766.PNG",
+                    "url": "https://catalog-bot-zf1t.onrender.com/IMG_5766.PNG",
                     "size": "full",
                     "aspectRatio": "20:13",
                     "aspectMode": "cover",
