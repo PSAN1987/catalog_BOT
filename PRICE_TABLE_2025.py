@@ -415,54 +415,54 @@ PRICE_TABLE = [
         "set_name_num": 800, "big_name": 550, "small_name": 300, "big_num": 550, "small_num": 300
     },
 
-    # ドライロングスリープTシャツ
+    # ドライロングスリーブTシャツ
     {
-        "item": "ドライロングスリープTシャツ", "min_qty": 20, "max_qty": 29, "discount_type": "早割",
+        "item": "ドライロングスリーブTシャツ", "min_qty": 20, "max_qty": 29, "discount_type": "早割",
         "unit_price": 1450, "color_add": 450, "pos_add": 450, "fullcolor_add": 650,
         "set_name_num": 800, "big_name": 550, "small_name": 300, "big_num": 550, "small_num": 300
     },
     {
-        "item": "ドライロングスリープTシャツ", "min_qty": 20, "max_qty": 29, "discount_type": "通常",
+        "item": "ドライロングスリーブTシャツ", "min_qty": 20, "max_qty": 29, "discount_type": "通常",
         "unit_price": 1650, "color_add": 450, "pos_add": 450, "fullcolor_add": 650,
         "set_name_num": 800, "big_name": 550, "small_name": 300, "big_num": 550, "small_num": 300
     },
     {
-        "item": "ドライロングスリープTシャツ", "min_qty": 30, "max_qty": 39, "discount_type": "早割",
+        "item": "ドライロングスリーブTシャツ", "min_qty": 30, "max_qty": 39, "discount_type": "早割",
         "unit_price": 1280, "color_add": 350, "pos_add": 350, "fullcolor_add": 650,
         "set_name_num": 800, "big_name": 550, "small_name": 300, "big_num": 550, "small_num": 300
     },
     {
-        "item": "ドライロングスリープTシャツ", "min_qty": 30, "max_qty": 39, "discount_type": "通常",
+        "item": "ドライロングスリーブTシャツ", "min_qty": 30, "max_qty": 39, "discount_type": "通常",
         "unit_price": 1480, "color_add": 350, "pos_add": 350, "fullcolor_add": 650,
         "set_name_num": 800, "big_name": 550, "small_name": 300, "big_num": 550, "small_num": 300
     },
     {
-        "item": "ドライロングスリープTシャツ", "min_qty": 40, "max_qty": 49, "discount_type": "早割",
+        "item": "ドライロングスリーブTシャツ", "min_qty": 40, "max_qty": 49, "discount_type": "早割",
         "unit_price": 1200, "color_add": 350, "pos_add": 350, "fullcolor_add": 650,
         "set_name_num": 800, "big_name": 550, "small_name": 300, "big_num": 550, "small_num": 300
     },
     {
-        "item": "ドライロングスリープTシャツ", "min_qty": 40, "max_qty": 49, "discount_type": "通常",
+        "item": "ドライロングスリーブTシャツ", "min_qty": 40, "max_qty": 49, "discount_type": "通常",
         "unit_price": 1400, "color_add": 350, "pos_add": 350, "fullcolor_add": 650,
         "set_name_num": 800, "big_name": 550, "small_name": 300, "big_num": 550, "small_num": 300
     },
     {
-        "item": "ドライロングスリープTシャツ", "min_qty": 50, "max_qty": 99, "discount_type": "早割",
+        "item": "ドライロングスリーブTシャツ", "min_qty": 50, "max_qty": 99, "discount_type": "早割",
         "unit_price": 1110, "color_add": 350, "pos_add": 350, "fullcolor_add": 650,
         "set_name_num": 800, "big_name": 550, "small_name": 300, "big_num": 550, "small_num": 300
     },
     {
-        "item": "ドライロングスリープTシャツ", "min_qty": 50, "max_qty": 99, "discount_type": "通常",
+        "item": "ドライロングスリーブTシャツ", "min_qty": 50, "max_qty": 99, "discount_type": "通常",
         "unit_price": 1310, "color_add": 350, "pos_add": 350, "fullcolor_add": 650,
         "set_name_num": 800, "big_name": 550, "small_name": 300, "big_num": 550, "small_num": 300
     },
     {
-        "item": "ドライロングスリープTシャツ", "min_qty": 100, "max_qty": 500, "discount_type": "早割",
+        "item": "ドライロングスリーブTシャツ", "min_qty": 100, "max_qty": 500, "discount_type": "早割",
         "unit_price": 1020, "color_add": 300, "pos_add": 300, "fullcolor_add": 650,
         "set_name_num": 800, "big_name": 550, "small_name": 300, "big_num": 550, "small_num": 300
     },
     {
-        "item": "ドライロングスリープTシャツ", "min_qty": 100, "max_qty": 500, "discount_type": "通常",
+        "item": "ドライロングスリーブTシャツ", "min_qty": 100, "max_qty": 500, "discount_type": "通常",
         "unit_price": 1220, "color_add": 300, "pos_add": 300, "fullcolor_add": 650,
         "set_name_num": 800, "big_name": 550, "small_name": 300, "big_num": 550, "small_num": 300
     },

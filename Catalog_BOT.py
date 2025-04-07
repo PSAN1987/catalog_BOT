@@ -63,14 +63,15 @@ def get_or_create_worksheet(sheet, title):
         # 必要であればヘッダをセット
         if title == "CatalogRequests":
             ws.update('A1:I1', [[
-            "日時",  # ←先頭に日時列
-            "氏名", "郵便番号", "住所", "電話番号",
-            "メールアドレス", "Insta/TikTok名",
-            "在籍予定の学校名と学年", "その他(質問・要望)"
-    ]])
+                "日時",  # ←先頭に日時列
+                "氏名", "郵便番号", "住所", "電話番号",
+                "メールアドレス", "Insta/TikTok名",
+                "在籍予定の学校名と学年", "その他(質問・要望)"
+            ]])
         elif title == "簡易見積":
-            ws.update('A1:L1', [[
-                "日時", "見積番号", "ユーザーID",
+            # 属性カラムを追加したため、A1:M1 で13列に拡張
+            ws.update('A1:M1', [[
+                "日時", "見積番号", "ユーザーID", "属性",
                 "使用日(割引区分)", "予算", "商品名", "枚数",
                 "プリント位置", "色数", "背ネーム",
                 "合計金額", "単価"
@@ -100,6 +101,7 @@ def write_to_spreadsheet_for_catalog(form_data: dict):
     ]
     worksheet.append_row(new_row, value_input_option="USER_ENTERED")
 
+
 # -----------------------
 # 簡易見積用データ構造
 # -----------------------
@@ -119,15 +121,16 @@ def write_estimate_to_spreadsheet(user_id, estimate_data, total_price, unit_pric
     worksheet = get_or_create_worksheet(sh, "簡易見積")
 
     quote_number = str(int(time.time()))  # 見積番号を UNIX時間 で仮生成
-    
-    # ▼ ここを日本時間に変更
+
+    # 日本時間の現在時刻
     jst = pytz.timezone('Asia/Tokyo')
     now_jst_str = datetime.now(jst).strftime("%Y/%m/%d %H:%M:%S")
 
     new_row = [
-        now_jst_str,  # ← time.strftime の代わりに日本時間文字列を使う
+        now_jst_str,
         quote_number,
         user_id,
+        estimate_data['user_type'],  # 追加した「属性」
         f"{estimate_data['usage_date']}({estimate_data['discount_type']})",
         estimate_data['budget'],
         estimate_data['item'],
@@ -161,7 +164,16 @@ def calculate_estimate(estimate_data):
     """
     item_name = estimate_data['item']
     discount_type = estimate_data['discount_type']
-    quantity = int(estimate_data['quantity'])
+    # 枚数選択肢を実数化
+    quantity_map = {
+        "20～29枚": 20,
+        "30～39枚": 30,
+        "40～49枚": 40,
+        "50～99枚": 50,
+        "100枚以上": 100
+    }
+    quantity = quantity_map.get(estimate_data['quantity'], 1)
+
     print_position = estimate_data['print_position']
     color_choice = estimate_data['color_count']
     back_name = estimate_data['back_name']
@@ -198,16 +210,12 @@ def calculate_estimate(estimate_data):
     return total_price, unit_price
 
 
-from linebot.models import FlexSendMessage
-
-
 # -----------------------
 # ここからFlex Message定義
 # -----------------------
-
-def flex_usage_date():
+def flex_user_type():
     """
-    ❶使用日 (14日前以上 or 14日前以内)
+    ❶属性 (学生 or 一般)
     """
     flex_body = {
         "type": "bubble",
@@ -217,14 +225,14 @@ def flex_usage_date():
             "contents": [
                 {
                     "type": "text",
-                    "text": "❶使用日",
+                    "text": "❶属性",
                     "weight": "bold",
                     "size": "lg",
                     "align": "center"
                 },
                 {
                     "type": "text",
-                    "text": "大会やイベントで使用する日程を教えてください。(注文日が14日前以上なら早割)",
+                    "text": "ご利用者の属性を選択してください。",
                     "size": "sm",
                     "wrap": True
                 }
@@ -241,8 +249,8 @@ def flex_usage_date():
                     "height": "sm",
                     "action": {
                         "type": "message",
-                        "label": "14日前以上",
-                        "text": "14日前以上"
+                        "label": "学生",
+                        "text": "学生"
                     }
                 },
                 {
@@ -251,8 +259,65 @@ def flex_usage_date():
                     "height": "sm",
                     "action": {
                         "type": "message",
-                        "label": "14日前以内",
-                        "text": "14日前以内"
+                        "label": "一般",
+                        "text": "一般"
+                    }
+                }
+            ],
+            "flex": 0
+        }
+    }
+    return FlexSendMessage(alt_text="属性を選択してください", contents=flex_body)
+
+
+def flex_usage_date():
+    """
+    ❷使用日 (2週目以降 or 2週目以内)
+    """
+    flex_body = {
+        "type": "bubble",
+        "hero": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "❷使用日",
+                    "weight": "bold",
+                    "size": "lg",
+                    "align": "center"
+                },
+                {
+                    "type": "text",
+                    "text": "大会やイベントで使用する日程を教えてください。\n(注文日より2週目以降なら早割)",
+                    "size": "sm",
+                    "wrap": True
+                }
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": [
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "height": "sm",
+                    "action": {
+                        "type": "message",
+                        "label": "2週目以降",
+                        "text": "2週目以降"
+                    }
+                },
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "height": "sm",
+                    "action": {
+                        "type": "message",
+                        "label": "2週目以内",
+                        "text": "2週目以内"
                     }
                 }
             ],
@@ -264,9 +329,9 @@ def flex_usage_date():
 
 def flex_budget():
     """
-    ❷1枚当たりの予算
+    ❸1枚当たりの予算
     """
-    budgets = ["1,000円", "2,000円", "3,000円", "4,000円", "5,000円"]
+    budgets = ["特になし", "1,000円以内", "1,500円以内", "2,000円以内", "2,500円以内", "3,000円以内", "3,500円以内"]
     buttons = []
     for b in budgets:
         buttons.append({
@@ -288,7 +353,7 @@ def flex_budget():
             "contents": [
                 {
                     "type": "text",
-                    "text": "❷1枚当たりの予算",
+                    "text": "❸1枚当たりの予算",
                     "weight": "bold",
                     "size": "lg",
                     "align": "center"
@@ -314,7 +379,7 @@ def flex_budget():
 
 def flex_item_select():
     """
-    ❸商品名
+    ❹商品名
     """
     items = [
         "ゲームシャツ",
@@ -325,7 +390,7 @@ def flex_item_select():
         "ドライTシャツ",
         "ハイクオリティTシャツ",
         "ドライポロシャツ",
-        "ドライロングスリープTシャツ",
+        "ドライロングスリーブTシャツ",  # 修正
         "クルーネックライトトレーナー",
         "ジップアップライトパーカー",
         "フーデッドライトパーカー",
@@ -355,7 +420,7 @@ def flex_item_select():
                 "contents": [
                     {
                         "type": "text",
-                        "text": "❸商品名",
+                        "text": "❹商品名",
                         "weight": "bold",
                         "size": "lg",
                         "align": "center"
@@ -386,9 +451,9 @@ def flex_item_select():
 
 def flex_quantity():
     """
-    ❹枚数
+    ❺枚数
     """
-    quantities = ["20", "30", "40", "50", "100"]
+    quantities = ["20～29枚", "30～39枚", "40～49枚", "50～99枚", "100枚以上"]
     buttons = []
     for q in quantities:
         buttons.append({
@@ -410,7 +475,7 @@ def flex_quantity():
             "contents": [
                 {
                     "type": "text",
-                    "text": "❹枚数",
+                    "text": "❺枚数",
                     "weight": "bold",
                     "size": "lg",
                     "align": "center"
@@ -435,7 +500,7 @@ def flex_quantity():
 
 def flex_print_position():
     """
-    ❺プリント位置
+    ❻プリント位置
     """
     positions = ["前のみ", "背中のみ", "前と背中"]
     buttons = []
@@ -459,7 +524,7 @@ def flex_print_position():
             "contents": [
                 {
                     "type": "text",
-                    "text": "❺プリント位置",
+                    "text": "❻プリント位置",
                     "weight": "bold",
                     "size": "lg",
                     "align": "center"
@@ -484,18 +549,9 @@ def flex_print_position():
 
 def flex_color_count():
     """
-    ❻色数
+    ❼色数
     """
-    color_list = [
-        "前 or 背中 1色",
-        "前 or 背中 2色",
-        "前 or 背中 フルカラー",
-        "前と背中 前1色 背中1色",
-        "前と背中 前2色 背中1色",
-        "前と背中 前1色 背中2色",
-        "前と背中 前2色 背中2色",
-        "前と背中 フルカラー",
-    ]
+    color_list = list(COLOR_COST_MAP.keys())
     chunk_size = 4
     color_bubbles = []
     for i in range(0, len(color_list), chunk_size):
@@ -508,7 +564,7 @@ def flex_color_count():
                 "height": "sm",
                 "action": {
                     "type": "message",
-                    "label": c[:12],  # ラベル文字数制限への対策
+                    "label": c,  # 切り捨てをやめ、フルで表示
                     "text": c
                 }
             })
@@ -520,7 +576,7 @@ def flex_color_count():
                 "contents": [
                     {
                         "type": "text",
-                        "text": "❻色数",
+                        "text": "❼色数",
                         "weight": "bold",
                         "size": "lg",
                         "align": "center"
@@ -551,7 +607,7 @@ def flex_color_count():
 
 def flex_back_name():
     """
-    ❼背ネーム・番号
+    ❽背ネーム・番号
     """
     names = ["ネーム&背番号セット", "ネーム(大)", "番号(大)", "背ネーム・番号を使わない"]
     buttons = []
@@ -575,7 +631,7 @@ def flex_back_name():
             "contents": [
                 {
                     "type": "text",
-                    "text": "❼背ネーム・番号",
+                    "text": "❽背ネーム・番号",
                     "weight": "bold",
                     "size": "lg",
                     "align": "center"
@@ -680,7 +736,6 @@ def handle_message(event: MessageEvent):
 
     # 2) 有人チャット
     if user_message == "#有人チャット":
-        # 指定されたメッセージを返信
         reply_text = (
             "有人チャットに接続いたします。\n"
             "ご検討中のデザインを画像やイラストでお送りください。\n\n"
@@ -706,8 +761,7 @@ def handle_message(event: MessageEvent):
         start_estimate_flow(event)
         return
 
-    # カタログ案内
-    # 完全一致で案内文を返信
+    # カタログ案内 (トリガー例: "キャンペーン" or "catalog" など含む場合)
     if "キャンペーン" in user_message or "catalog" in user_message.lower():
         send_catalog_info(event)
         return
@@ -718,7 +772,7 @@ def handle_message(event: MessageEvent):
 
 def send_catalog_info(event: MessageEvent):
     """
-    カタログ案内メッセージ（ご指定の文面を完全一致で返す）
+    カタログ案内メッセージ
     """
     reply_text = (
         "🎁➖➖➖➖➖➖➖➖🎁\n"
@@ -755,7 +809,7 @@ def send_catalog_info(event: MessageEvent):
 # -----------------------
 def start_estimate_flow(event: MessageEvent):
     """
-    見積フローを開始し、step=1(使用日)を提示する
+    見積フローを開始し、step=1(属性)を提示する
     """
     user_id = event.source.user_id
 
@@ -765,16 +819,24 @@ def start_estimate_flow(event: MessageEvent):
         "answers": {}
     }
 
-    # 最初のステップ（使用日選択Flex）を送る
+    # 最初のステップ（属性選択Flex）を送る
     line_bot_api.reply_message(
         event.reply_token,
-        flex_usage_date()
+        flex_user_type()
     )
 
 
 def process_estimate_flow(event: MessageEvent, user_message: str):
     """
-    見積フロー中のやり取り (step 1～7)
+    見積フロー中のやり取り
+    step 1: 属性
+    step 2: 使用日
+    step 3: 予算
+    step 4: 商品名
+    step 5: 枚数
+    step 6: プリント位置
+    step 7: 色数
+    step 8: 背ネーム・番号
     """
     user_id = event.source.user_id
 
@@ -785,15 +847,13 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
     session_data = user_estimate_sessions[user_id]
     step = session_data["step"]
 
-    # 1) 使用日
+    # 1) 属性
     if step == 1:
-        if user_message in ["14日前以上", "14日前以内"]:
-            session_data["answers"]["usage_date"] = user_message
-            session_data["answers"]["discount_type"] = "早割" if user_message == "14日前以上" else "通常"
+        if user_message in ["学生", "一般"]:
+            session_data["answers"]["user_type"] = user_message
             session_data["step"] = 2
-            line_bot_api.reply_message(event.reply_token, flex_budget())
+            line_bot_api.reply_message(event.reply_token, flex_usage_date())
         else:
-            # 期待外の入力：セッション破棄
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
@@ -801,12 +861,27 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             )
         return
 
-    # 2) 1枚当たりの予算
+    # 2) 使用日
     elif step == 2:
-        budgets = ["1,000円", "2,000円", "3,000円", "4,000円", "5,000円"]
-        if user_message in budgets:
-            session_data["answers"]["budget"] = user_message
+        if user_message in ["2週目以降", "2週目以内"]:
+            session_data["answers"]["usage_date"] = user_message
+            session_data["answers"]["discount_type"] = "早割" if user_message == "2週目以降" else "通常"
             session_data["step"] = 3
+            line_bot_api.reply_message(event.reply_token, flex_budget())
+        else:
+            del user_estimate_sessions[user_id]
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
+            )
+        return
+
+    # 3) 1枚当たりの予算
+    elif step == 3:
+        valid_budgets = ["特になし", "1,000円以内", "1,500円以内", "2,000円以内", "2,500円以内", "3,000円以内", "3,500円以内"]
+        if user_message in valid_budgets:
+            session_data["answers"]["budget"] = user_message
+            session_data["step"] = 4
             line_bot_api.reply_message(event.reply_token, flex_item_select())
         else:
             del user_estimate_sessions[user_id]
@@ -816,8 +891,8 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             )
         return
 
-    # 3) 商品名
-    elif step == 3:
+    # 4) 商品名
+    elif step == 4:
         items = [
             "ゲームシャツ",
             "ストライプドライベースボールシャツ",
@@ -827,14 +902,14 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             "ドライTシャツ",
             "ハイクオリティTシャツ",
             "ドライポロシャツ",
-            "ドライロングスリープTシャツ",
+            "ドライロングスリーブTシャツ",
             "クルーネックライトトレーナー",
             "ジップアップライトパーカー",
             "フーデッドライトパーカー",
         ]
         if user_message in items:
             session_data["answers"]["item"] = user_message
-            session_data["step"] = 4
+            session_data["step"] = 5
             line_bot_api.reply_message(event.reply_token, flex_quantity())
         else:
             del user_estimate_sessions[user_id]
@@ -844,12 +919,12 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             )
         return
 
-    # 4) 枚数
-    elif step == 4:
-        valid_choices = ["10", "20", "30", "40", "50", "100"]
+    # 5) 枚数
+    elif step == 5:
+        valid_choices = ["20～29枚", "30～39枚", "40～49枚", "50～99枚", "100枚以上"]
         if user_message in valid_choices:
             session_data["answers"]["quantity"] = user_message
-            session_data["step"] = 5
+            session_data["step"] = 6
             line_bot_api.reply_message(event.reply_token, flex_print_position())
         else:
             del user_estimate_sessions[user_id]
@@ -859,12 +934,12 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             )
         return
 
-    # 5) プリント位置
-    elif step == 5:
+    # 6) プリント位置
+    elif step == 6:
         valid_positions = ["前のみ", "背中のみ", "前と背中"]
         if user_message in valid_positions:
             session_data["answers"]["print_position"] = user_message
-            session_data["step"] = 6
+            session_data["step"] = 7
             line_bot_api.reply_message(event.reply_token, flex_color_count())
         else:
             del user_estimate_sessions[user_id]
@@ -874,12 +949,12 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             )
         return
 
-    # 6) 色数
-    elif step == 6:
+    # 7) 色数
+    elif step == 7:
         color_list = list(COLOR_COST_MAP.keys())
         if user_message in color_list:
             session_data["answers"]["color_count"] = user_message
-            session_data["step"] = 7
+            session_data["step"] = 8
             line_bot_api.reply_message(event.reply_token, flex_back_name())
         else:
             del user_estimate_sessions[user_id]
@@ -889,26 +964,26 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             )
         return
 
-    # 7) 背ネーム・番号
-    elif step == 7:
+    # 8) 背ネーム・番号
+    elif step == 8:
         valid_back_names = ["ネーム&背番号セット", "ネーム(大)", "番号(大)", "背ネーム・番号を使わない"]
         if user_message in valid_back_names:
             session_data["answers"]["back_name"] = user_message
-            session_data["step"] = 8
+            session_data["step"] = 9  # この後はフロー完了へ
 
             # 見積計算
             est_data = session_data["answers"]
-            quantity = int(est_data["quantity"])
             total_price, unit_price = calculate_estimate(est_data)
             quote_number = write_estimate_to_spreadsheet(user_id, est_data, total_price, unit_price)
 
             reply_text = (
                 f"お見積りが完了しました。\n\n"
                 f"見積番号: {quote_number}\n"
+                f"属性: {est_data['user_type']}\n"
                 f"使用日: {est_data['usage_date']}（{est_data['discount_type']}）\n"
                 f"予算: {est_data['budget']}\n"
                 f"商品: {est_data['item']}\n"
-                f"枚数: {quantity}枚\n"
+                f"枚数: {est_data['quantity']}\n"
                 f"プリント位置: {est_data['print_position']}\n"
                 f"色数: {est_data['color_count']}\n"
                 f"背ネーム・番号: {est_data['back_name']}\n\n"
@@ -938,7 +1013,6 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             TextSendMessage(text="エラーが発生しました。見積りフローを終了しました。最初からやり直してください。")
         )
         return
-
 
 
 # -----------------------
