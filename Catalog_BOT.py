@@ -267,6 +267,7 @@ def flex_user_type():
                 {
                     "type": "button",
                     "style": "primary",
+                    "color": "#fc9cc2",
                     "height": "sm",
                     "action": {
                         "type": "message",
@@ -277,6 +278,7 @@ def flex_user_type():
                 {
                     "type": "button",
                     "style": "primary",
+                    "color": "#fc9cc2",
                     "height": "sm",
                     "action": {
                         "type": "message",
@@ -324,6 +326,7 @@ def flex_usage_date():
                 {
                     "type": "button",
                     "style": "primary",
+                    "color": "#fc9cc2",
                     "height": "sm",
                     "action": {
                         "type": "message",
@@ -334,6 +337,7 @@ def flex_usage_date():
                 {
                     "type": "button",
                     "style": "primary",
+                    "color": "#fc9cc2",
                     "height": "sm",
                     "action": {
                         "type": "message",
@@ -358,6 +362,7 @@ def flex_budget():
         buttons.append({
             "type": "button",
             "style": "primary",
+            "color": "#fc9cc2",
             "height": "sm",
             "action": {
                 "type": "message",
@@ -426,6 +431,7 @@ def flex_item_select():
             buttons.append({
                 "type": "button",
                 "style": "primary",
+                "color": "#fc9cc2",
                 "height": "sm",
                 "action": {
                     "type": "message",
@@ -480,6 +486,7 @@ def flex_quantity():
         buttons.append({
             "type": "button",
             "style": "primary",
+            "color": "#fc9cc2",
             "height": "sm",
             "action": {
                 "type": "message",
@@ -529,6 +536,7 @@ def flex_print_position():
         buttons.append({
             "type": "button",
             "style": "primary",
+            "color": "#fc9cc2",
             "height": "sm",
             "action": {
                 "type": "message",
@@ -579,6 +587,7 @@ def flex_color_count_single():
         buttons_bubbles.append({
             "type": "button",
             "style": "primary",
+            "color": "#fc9cc2",
             "height": "sm",
             "action": {
                 "type": "message",
@@ -629,6 +638,7 @@ def flex_color_count_both():
         buttons_bubbles.append({
             "type": "button",
             "style": "primary",
+            "color": "#fc9cc2",
             "height": "sm",
             "action": {
                 "type": "message",
@@ -678,6 +688,7 @@ def flex_back_name():
         buttons.append({
             "type": "button",
             "style": "primary",
+            "color": "#fc9cc2",
             "height": "sm",
             "action": {
                 "type": "message",
@@ -721,6 +732,7 @@ def flex_back_name():
         }
     }
     return FlexSendMessage(alt_text="背ネーム・番号を選択してください", contents=flex_body)
+
 
 
 # -----------------------
