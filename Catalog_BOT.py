@@ -230,9 +230,8 @@ def calculate_estimate(estimate_data):
 
     return total_price, unit_price
 
-
 # -----------------------
-# ここからFlex Message定義
+# ここからFlex Message定義 (修正後)
 # -----------------------
 def flex_user_type():
     """
@@ -240,6 +239,15 @@ def flex_user_type():
     """
     flex_body = {
         "type": "bubble",
+        # ▼ 追加: バブル全体のスタイル設定
+        "styles": {
+            "hero": {
+                "backgroundColor": "#FFB6C1"
+            },
+            "footer": {
+                "backgroundColor": "#FFB6C1"
+            }
+        },
         "hero": {
             "type": "box",
             "layout": "vertical",
@@ -297,6 +305,14 @@ def flex_usage_date():
     """
     flex_body = {
         "type": "bubble",
+        "styles": {
+            "hero": {
+                "backgroundColor": "#FFB6C1"
+            },
+            "footer": {
+                "backgroundColor": "#FFB6C1"
+            }
+        },
         "hero": {
             "type": "box",
             "layout": "vertical",
@@ -368,6 +384,14 @@ def flex_budget():
 
     flex_body = {
         "type": "bubble",
+        "styles": {
+            "hero": {
+                "backgroundColor": "#FFB6C1"
+            },
+            "footer": {
+                "backgroundColor": "#FFB6C1"
+            }
+        },
         "hero": {
             "type": "box",
             "layout": "vertical",
@@ -411,7 +435,7 @@ def flex_item_select():
         "ドライTシャツ",
         "ハイクオリティTシャツ",
         "ドライポロシャツ",
-        "ドライロングスリーブTシャツ",  # 修正
+        "ドライロングスリーブTシャツ",
         "クルーネックライトトレーナー",
         "ジップアップライトパーカー",
         "フーデッドライトパーカー",
@@ -435,6 +459,14 @@ def flex_item_select():
             })
         bubble = {
             "type": "bubble",
+            "styles": {
+                "hero": {
+                    "backgroundColor": "#FFB6C1"
+                },
+                "footer": {
+                    "backgroundColor": "#FFB6C1"
+                }
+            },
             "hero": {
                 "type": "box",
                 "layout": "vertical",
@@ -490,6 +522,14 @@ def flex_quantity():
 
     flex_body = {
         "type": "bubble",
+        "styles": {
+            "hero": {
+                "backgroundColor": "#FFB6C1"
+            },
+            "footer": {
+                "backgroundColor": "#FFB6C1"
+            }
+        },
         "hero": {
             "type": "box",
             "layout": "vertical",
@@ -539,6 +579,14 @@ def flex_print_position():
 
     flex_body = {
         "type": "bubble",
+        "styles": {
+            "hero": {
+                "backgroundColor": "#FFB6C1"
+            },
+            "footer": {
+                "backgroundColor": "#FFB6C1"
+            }
+        },
         "hero": {
             "type": "box",
             "layout": "vertical",
@@ -589,6 +637,14 @@ def flex_color_count_single():
 
     flex_body = {
         "type": "bubble",
+        "styles": {
+            "hero": {
+                "backgroundColor": "#FFB6C1"
+            },
+            "footer": {
+                "backgroundColor": "#FFB6C1"
+            }
+        },
         "hero": {
             "type": "box",
             "layout": "vertical",
@@ -639,6 +695,14 @@ def flex_color_count_both():
 
     flex_body = {
         "type": "bubble",
+        "styles": {
+            "hero": {
+                "backgroundColor": "#FFB6C1"
+            },
+            "footer": {
+                "backgroundColor": "#FFB6C1"
+            }
+        },
         "hero": {
             "type": "box",
             "layout": "vertical",
@@ -688,6 +752,14 @@ def flex_back_name():
 
     flex_body = {
         "type": "bubble",
+        "styles": {
+            "hero": {
+                "backgroundColor": "#FFB6C1"
+            },
+            "footer": {
+                "backgroundColor": "#FFB6C1"
+            }
+        },
         "hero": {
             "type": "box",
             "layout": "vertical",
