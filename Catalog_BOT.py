@@ -234,16 +234,12 @@ def calculate_estimate(estimate_data):
 # -----------------------
 # ここからFlex Message定義
 # -----------------------
-# -----------------------
-# ここからFlex Message定義 (修正後)
-# -----------------------
 def flex_user_type():
     """
     ❶属性 (学生 or 一般)
     """
     flex_body = {
         "type": "bubble",
-        # バブル全体の styles は設定しない（背景色はデフォルトの白）
         "hero": {
             "type": "box",
             "layout": "vertical",
@@ -271,7 +267,6 @@ def flex_user_type():
                 {
                     "type": "button",
                     "style": "primary",
-                    "color": "#FFE4E1",  # 白っぽいピンク
                     "height": "sm",
                     "action": {
                         "type": "message",
@@ -282,7 +277,6 @@ def flex_user_type():
                 {
                     "type": "button",
                     "style": "primary",
-                    "color": "#FFE4E1",  # 白っぽいピンク
                     "height": "sm",
                     "action": {
                         "type": "message",
@@ -330,7 +324,6 @@ def flex_usage_date():
                 {
                     "type": "button",
                     "style": "primary",
-                    "color": "#FFE4E1",
                     "height": "sm",
                     "action": {
                         "type": "message",
@@ -341,7 +334,6 @@ def flex_usage_date():
                 {
                     "type": "button",
                     "style": "primary",
-                    "color": "#FFE4E1",
                     "height": "sm",
                     "action": {
                         "type": "message",
@@ -366,7 +358,6 @@ def flex_budget():
         buttons.append({
             "type": "button",
             "style": "primary",
-            "color": "#FFE4E1",
             "height": "sm",
             "action": {
                 "type": "message",
@@ -420,7 +411,7 @@ def flex_item_select():
         "ドライTシャツ",
         "ハイクオリティTシャツ",
         "ドライポロシャツ",
-        "ドライロングスリーブTシャツ",
+        "ドライロングスリーブTシャツ",  # 修正
         "クルーネックライトトレーナー",
         "ジップアップライトパーカー",
         "フーデッドライトパーカー",
@@ -435,7 +426,6 @@ def flex_item_select():
             buttons.append({
                 "type": "button",
                 "style": "primary",
-                "color": "#FFE4E1",
                 "height": "sm",
                 "action": {
                     "type": "message",
@@ -445,7 +435,6 @@ def flex_item_select():
             })
         bubble = {
             "type": "bubble",
-            # バックグラウンドは白のまま（styles未指定）
             "hero": {
                 "type": "box",
                 "layout": "vertical",
@@ -491,7 +480,6 @@ def flex_quantity():
         buttons.append({
             "type": "button",
             "style": "primary",
-            "color": "#FFE4E1",
             "height": "sm",
             "action": {
                 "type": "message",
@@ -541,7 +529,6 @@ def flex_print_position():
         buttons.append({
             "type": "button",
             "style": "primary",
-            "color": "#FFE4E1",
             "height": "sm",
             "action": {
                 "type": "message",
@@ -581,6 +568,7 @@ def flex_print_position():
     return FlexSendMessage(alt_text="プリント位置を選択してください", contents=flex_body)
 
 
+# ▼▼▼ 新規: プリント位置が「前のみ」「背中のみ」の場合の ❼色数
 def flex_color_count_single():
     """
     ❼色数（シングル: 前のみ / 背中のみ）
@@ -591,7 +579,6 @@ def flex_color_count_single():
         buttons_bubbles.append({
             "type": "button",
             "style": "primary",
-            "color": "#FFE4E1",
             "height": "sm",
             "action": {
                 "type": "message",
@@ -602,7 +589,6 @@ def flex_color_count_single():
 
     flex_body = {
         "type": "bubble",
-        # 背景は白
         "hero": {
             "type": "box",
             "layout": "vertical",
@@ -632,6 +618,7 @@ def flex_color_count_single():
     return FlexSendMessage(alt_text="色数を選択してください", contents=flex_body)
 
 
+# ▼▼▼ 新規: プリント位置が「前と背中」の場合の ❼色数
 def flex_color_count_both():
     """
     ❼色数（両面: 前と背中）
@@ -642,7 +629,6 @@ def flex_color_count_both():
         buttons_bubbles.append({
             "type": "button",
             "style": "primary",
-            "color": "#FFE4E1",
             "height": "sm",
             "action": {
                 "type": "message",
@@ -653,7 +639,6 @@ def flex_color_count_both():
 
     flex_body = {
         "type": "bubble",
-        # 背景は白
         "hero": {
             "type": "box",
             "layout": "vertical",
@@ -693,7 +678,6 @@ def flex_back_name():
         buttons.append({
             "type": "button",
             "style": "primary",
-            "color": "#FFE4E1",
             "height": "sm",
             "action": {
                 "type": "message",
@@ -704,7 +688,6 @@ def flex_back_name():
 
     flex_body = {
         "type": "bubble",
-        # 背景は白
         "hero": {
             "type": "box",
             "layout": "vertical",
@@ -739,6 +722,47 @@ def flex_back_name():
     }
     return FlexSendMessage(alt_text="背ネーム・番号を選択してください", contents=flex_body)
 
+
+# -----------------------
+# お問い合わせ時に返信するFlex Message
+# -----------------------
+def flex_inquiry():
+    contents = {
+        "type": "carousel",
+        "contents": [
+            # 1個目: FAQ
+            {
+                "type": "bubble",
+                "hero": {
+                    "type": "image",
+                    "url": "https://catalog-bot-zf1t.onrender.com/IMG_5765.PNG",
+                    "size": "full",
+                    "aspectRatio": "501:556",
+                    "aspectMode": "cover",
+                    "action": {
+                        "type": "uri",
+                        "uri": "https://graffitees.jp/faq/"
+                    }
+                }
+            },
+            # 2個目: 有人チャット
+            {
+                "type": "bubble",
+                "hero": {
+                    "type": "image",
+                    "url": "https://catalog-bot-zf1t.onrender.com/IMG_5766.PNG",
+                    "size": "full",
+                    "aspectRatio": "501:556",
+                    "aspectMode": "cover",
+                    "action": {
+                        "type": "message",
+                        "text": "#有人チャット"
+                    }
+                }
+            }
+        ]
+    }
+    return FlexSendMessage(alt_text="お問い合わせ情報", contents=contents)
 
 
 # -----------------------
