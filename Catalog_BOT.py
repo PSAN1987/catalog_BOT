@@ -310,7 +310,7 @@ def flex_usage_date():
                 },
                 {
                     "type": "text",
-                    "text": "ご使用日は注文日より? (注文日より使用日が2週目以降なら早割)",
+                    "text": "ご使用日は注文日より? \n(注文日より使用日が2週目以降なら早割)",
                     "size": "sm",
                     "wrap": True
                 }
@@ -602,7 +602,7 @@ def flex_color_count_single():
                 },
                 {
                     "type": "text",
-                    "text": "プリントの色数を選択してください。（前のみ/背中のみ）",
+                    "text": "プリントの色数を選択してください。\n（前のみ/背中のみ）",
                     "size": "sm",
                     "wrap": True
                 }
@@ -652,7 +652,7 @@ def flex_color_count_both():
                 },
                 {
                     "type": "text",
-                    "text": "プリントの色数を選択してください。（前と背中）",
+                    "text": "プリントの色数を選択してください。\n（前と背中）",
                     "size": "sm",
                     "wrap": True
                 }
