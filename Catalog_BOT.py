@@ -232,6 +232,9 @@ def calculate_estimate(estimate_data):
 
 
 # -----------------------
+# ここからFlex Message定義
+# -----------------------
+# -----------------------
 # ここからFlex Message定義 (修正後)
 # -----------------------
 def flex_user_type():
