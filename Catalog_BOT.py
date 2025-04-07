@@ -105,11 +105,27 @@ def write_to_spreadsheet_for_catalog(form_data: dict):
 # -----------------------
 # 簡易見積用データ構造
 # -----------------------
-# PRICE_TABLE_2025.py から PRICE_TABLE, COLOR_COST_MAP を import
+# 変更点はあるがインポートはそのまま
 from PRICE_TABLE_2025 import PRICE_TABLE, COLOR_COST_MAP
 
+# ▼▼▼ 新規: プリント位置が「前のみ/背中のみ」のときの色数選択肢および対応コスト
+COLOR_COST_MAP_SINGLE = {
+    "前 or 背中 1色": (0, 0),
+    "前 or 背中 2色": (1, 0),
+    "前 or 背中 フルカラー": (0, 1),
+}
+
+# ▼▼▼ 新規: プリント位置が「前と背中」のときの色数選択肢および対応コスト
+COLOR_COST_MAP_BOTH = {
+    "前と背中 前1色 背中1色": (0, 0),
+    "前と背中 前2色 背中1色": (1, 0),
+    "前と背中 前1色 背中2色": (1, 0),
+    "前と背中 前2色 背中2色": (2, 0),
+    "前と背中 フルカラー": (0, 2),
+}
+
 # ユーザの見積フロー管理用（簡易的セッション）
-user_estimate_sessions = {}  # { user_id: {"step": n, "answers": {...}} }
+user_estimate_sessions = {}  # { user_id: {"step": n, "answers": {...}, "is_single": bool} }
 
 
 def write_estimate_to_spreadsheet(user_id, estimate_data, total_price, unit_price):
@@ -176,7 +192,7 @@ def calculate_estimate(estimate_data):
 
     print_position = estimate_data['print_position']
     color_choice = estimate_data['color_count']
-    back_name = estimate_data['back_name']
+    back_name = estimate_data.get('back_name', "")  # 存在しない場合は空文字
 
     row = find_price_row(item_name, discount_type, quantity)
     if row is None:
@@ -190,19 +206,24 @@ def calculate_estimate(estimate_data):
     else:
         pos_add = row["pos_add"]
 
-    # 色数追加
-    color_add_count, fullcolor_add_count = COLOR_COST_MAP[color_choice]
-    color_fee = color_add_count * row["color_add"] + fullcolor_add_count * row["fullcolor_add"]
-
-    # 背ネーム・番号
-    if back_name == "ネーム&背番号セット":
-        back_name_fee = row["set_name_num"]
-    elif back_name == "ネーム(大)":
-        back_name_fee = row["big_name"]
-    elif back_name == "番号(大)":
-        back_name_fee = row["big_num"]
-    else:
+    # ▼▼▼ 変更点: プリント位置によって color_cost_map を切り替え
+    if print_position in ["前のみ", "背中のみ"]:
+        color_add_count, fullcolor_add_count = COLOR_COST_MAP_SINGLE[color_choice]
+        # 背ネームはスキップ扱い => 0円
         back_name_fee = 0
+    else:
+        color_add_count, fullcolor_add_count = COLOR_COST_MAP_BOTH[color_choice]
+        # 背ネームありの場合を計算
+        if back_name == "ネーム&背番号セット":
+            back_name_fee = row["set_name_num"]
+        elif back_name == "ネーム(大)":
+            back_name_fee = row["big_name"]
+        elif back_name == "番号(大)":
+            back_name_fee = row["big_num"]
+        else:
+            back_name_fee = 0
+
+    color_fee = color_add_count * row["color_add"] + fullcolor_add_count * row["fullcolor_add"]
 
     unit_price = base_price + pos_add + color_fee + back_name_fee
     total_price = unit_price * quantity
@@ -289,7 +310,7 @@ def flex_usage_date():
                 },
                 {
                     "type": "text",
-                    "text": "大会やイベントで使用する日程を教えてください。\n(注文日より2週目以降なら早割)",
+                    "text": "ご使用日は注文日より? (注文日より使用日が2週目以降なら早割)",
                     "size": "sm",
                     "wrap": True
                 }
@@ -547,62 +568,104 @@ def flex_print_position():
     return FlexSendMessage(alt_text="プリント位置を選択してください", contents=flex_body)
 
 
-def flex_color_count():
+# ▼▼▼ 新規: プリント位置が「前のみ」「背中のみ」の場合の ❼色数
+def flex_color_count_single():
     """
-    ❼色数
+    ❼色数（シングル: 前のみ / 背中のみ）
     """
-    color_list = list(COLOR_COST_MAP.keys())
-    chunk_size = 4
-    color_bubbles = []
-    for i in range(0, len(color_list), chunk_size):
-        chunk_part = color_list[i:i + chunk_size]
-        buttons = []
-        for c in chunk_part:
-            buttons.append({
-                "type": "button",
-                "style": "primary",
-                "height": "sm",
-                "action": {
-                    "type": "message",
-                    "label": c,  # 切り捨てをやめ、フルで表示
-                    "text": c
-                }
-            })
-        bubble = {
-            "type": "bubble",
-            "hero": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": "❼色数",
-                        "weight": "bold",
-                        "size": "lg",
-                        "align": "center"
-                    },
-                    {
-                        "type": "text",
-                        "text": "プリントの色数を選択してください。",
-                        "size": "sm",
-                        "wrap": True
-                    }
-                ]
-            },
-            "footer": {
-                "type": "box",
-                "layout": "vertical",
-                "spacing": "sm",
-                "contents": buttons
+    color_choices = list(COLOR_COST_MAP_SINGLE.keys())
+    buttons_bubbles = []
+    for c in color_choices:
+        buttons_bubbles.append({
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "action": {
+                "type": "message",
+                "label": c,
+                "text": c
             }
-        }
-        color_bubbles.append(bubble)
+        })
 
-    carousel = {
-        "type": "carousel",
-        "contents": color_bubbles
+    flex_body = {
+        "type": "bubble",
+        "hero": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "❼色数",
+                    "weight": "bold",
+                    "size": "lg",
+                    "align": "center"
+                },
+                {
+                    "type": "text",
+                    "text": "プリントの色数を選択してください。（前のみ/背中のみ）",
+                    "size": "sm",
+                    "wrap": True
+                }
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": buttons_bubbles
+        }
     }
-    return FlexSendMessage(alt_text="色数を選択してください", contents=carousel)
+    return FlexSendMessage(alt_text="色数を選択してください", contents=flex_body)
+
+
+# ▼▼▼ 新規: プリント位置が「前と背中」の場合の ❼色数
+def flex_color_count_both():
+    """
+    ❼色数（両面: 前と背中）
+    """
+    color_choices = list(COLOR_COST_MAP_BOTH.keys())
+    buttons_bubbles = []
+    for c in color_choices:
+        buttons_bubbles.append({
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "action": {
+                "type": "message",
+                "label": c,
+                "text": c
+            }
+        })
+
+    flex_body = {
+        "type": "bubble",
+        "hero": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "❼色数",
+                    "weight": "bold",
+                    "size": "lg",
+                    "align": "center"
+                },
+                {
+                    "type": "text",
+                    "text": "プリントの色数を選択してください。（前と背中）",
+                    "size": "sm",
+                    "wrap": True
+                }
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": buttons_bubbles
+        }
+    }
+    return FlexSendMessage(alt_text="色数を選択してください", contents=flex_body)
 
 
 def flex_back_name():
@@ -816,7 +879,8 @@ def start_estimate_flow(event: MessageEvent):
     # セッションを初期化
     user_estimate_sessions[user_id] = {
         "step": 1,
-        "answers": {}
+        "answers": {},
+        "is_single": False  # 新規: 前のみ/背中のみかどうか
     }
 
     # 最初のステップ（属性選択Flex）を送る
@@ -836,11 +900,10 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
     step 5: 枚数
     step 6: プリント位置
     step 7: 色数
-    step 8: 背ネーム・番号
+       - (前のみ/背中のみ)の場合 -> フロー完了へ
+       - (前と背中)の場合 -> step 8: 背ネーム・番号 -> step 9: 完了
     """
     user_id = event.source.user_id
-
-    # セッションがない場合は何もしない
     if user_id not in user_estimate_sessions:
         return
 
@@ -940,7 +1003,14 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
         if user_message in valid_positions:
             session_data["answers"]["print_position"] = user_message
             session_data["step"] = 7
-            line_bot_api.reply_message(event.reply_token, flex_color_count())
+
+            # 新規: プリント位置が 前のみ/背中のみ なら is_single=True
+            if user_message in ["前のみ", "背中のみ"]:
+                session_data["is_single"] = True
+                line_bot_api.reply_message(event.reply_token, flex_color_count_single())
+            else:
+                session_data["is_single"] = False
+                line_bot_api.reply_message(event.reply_token, flex_color_count_both())
         else:
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
@@ -951,25 +1021,76 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
 
     # 7) 色数
     elif step == 7:
-        color_list = list(COLOR_COST_MAP.keys())
-        if user_message in color_list:
+        # プリント位置が「前のみ/背中のみ」→ is_single=True
+        #           が「前と背中」 → is_single=False
+        if session_data["is_single"]:
+            # シングル面の色数マップをチェック
+            if user_message not in COLOR_COST_MAP_SINGLE:
+                # 不正入力
+                del user_estimate_sessions[user_id]
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
+                )
+                return
+
+            # OK
             session_data["answers"]["color_count"] = user_message
-            session_data["step"] = 8
-            line_bot_api.reply_message(event.reply_token, flex_back_name())
-        else:
-            del user_estimate_sessions[user_id]
+            # 背ネーム・番号はスキップ => back_name=空 or "なし" として保存
+            session_data["answers"]["back_name"] = "なし"
+
+            # 計算
+            est_data = session_data["answers"]
+            total_price, unit_price = calculate_estimate(est_data)
+            quote_number = write_estimate_to_spreadsheet(user_id, est_data, total_price, unit_price)
+
+            reply_text = (
+                f"お見積りが完了しました。\n\n"
+                f"見積番号: {quote_number}\n"
+                f"属性: {est_data['user_type']}\n"
+                f"使用日: {est_data['usage_date']}（{est_data['discount_type']}）\n"
+                f"予算: {est_data['budget']}\n"
+                f"商品: {est_data['item']}\n"
+                f"枚数: {est_data['quantity']}\n"
+                f"プリント位置: {est_data['print_position']}\n"
+                f"色数: {est_data['color_count']}\n"
+                f"背ネーム・番号: なし\n\n"
+                f"【合計金額】¥{total_price:,}\n"
+                f"【1枚あたり】¥{unit_price:,}\n"
+            )
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
+                TextSendMessage(text=reply_text)
             )
+
+            # フロー終了
+            del user_estimate_sessions[user_id]
+
+        else:
+            # 前と背中 の場合
+            if user_message not in COLOR_COST_MAP_BOTH:
+                # 不正入力
+                del user_estimate_sessions[user_id]
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
+                )
+                return
+
+            # OK
+            session_data["answers"]["color_count"] = user_message
+            # 次のstep(8)で背ネーム・番号を聞く
+            session_data["step"] = 8
+            line_bot_api.reply_message(event.reply_token, flex_back_name())
+
         return
 
-    # 8) 背ネーム・番号
+    # 8) 背ネーム・番号 (「前と背中」だけがここへ進む)
     elif step == 8:
         valid_back_names = ["ネーム&背番号セット", "ネーム(大)", "番号(大)", "背ネーム・番号を使わない"]
         if user_message in valid_back_names:
             session_data["answers"]["back_name"] = user_message
-            session_data["step"] = 9  # この後はフロー完了へ
+            session_data["step"] = 9
 
             # 見積計算
             est_data = session_data["answers"]
