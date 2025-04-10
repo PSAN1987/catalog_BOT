@@ -5,7 +5,8 @@ from datetime import datetime
 import pytz
 
 import gspread
-from flask import Flask, request, abort, render_template_string
+from flask import Flask, render_template_string, request, session
+import uuid
 from oauth2client.service_account import ServiceAccountCredentials
 
 # line-bot-sdk v2 系
@@ -16,6 +17,7 @@ from linebot.models import (
 )
 
 app = Flask(__name__)
+app.secret_key = 'some_secret_key'  # セッションが必要
 
 # -----------------------
 # 環境変数取得
@@ -1153,64 +1155,72 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
 # -----------------------
 @app.route("/catalog_form", methods=["GET"])
 def show_catalog_form():
-    html_content = """
-<!DOCTYPE html>
+    # ユニークなトークンを生成して session に記録
+    token = str(uuid.uuid4())
+    session['catalog_form_token'] = token
+
+    # ここで f-string を用いて {token} を実際の値に差し込む
+    html_content = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>カタログ申し込みフォーム</title>
     <style>
-        body {
+        body {{
             margin: 0;
             padding: 0;
             font-family: sans-serif;
-        }
-        .container {
+        }}
+        .container {{
             max-width: 600px; 
             margin: 0 auto;
             padding: 1em;
-        }
-        label {
+        }}
+        label {{
             display: block;
             margin-bottom: 0.5em;
-        }
-        input[type=text], input[type=email], textarea {
+        }}
+        input[type=text], input[type=email], textarea {{
             width: 100%;
             padding: 0.5em;
             margin-top: 0.3em;
             box-sizing: border-box;
-        }
-        input[type=submit] {
+        }}
+        input[type=submit] {{
             padding: 0.7em 1em;
             font-size: 1em;
             margin-top: 1em;
-        }
+        }}
     </style>
     <script>
-    async function fetchAddress() {
+    async function fetchAddress() {{
         let pcRaw = document.getElementById('postal_code').value.trim();
         pcRaw = pcRaw.replace('-', '');
-        if (pcRaw.length < 7) {
+        if (pcRaw.length < 7) {{
             return;
-        }
-        try {
-            const response = await fetch(`https://api.zipaddress.net/?zipcode=${pcRaw}`);
+        }}
+        try {{
+            const response = await fetch(`https://api.zipaddress.net/?zipcode=${{pcRaw}}`);
             const data = await response.json();
-            if (data.code === 200) {
+            if (data.code === 200) {{
                 document.getElementById('address').value = data.data.fullAddress;
-            }
-        } catch (error) {
+            }}
+        }} catch (error) {{
             console.log("住所検索失敗:", error);
-        }
-    }
+        }}
+    }}
     </script>
 </head>
 <body>
     <div class="container">
       <h1>カタログ申し込みフォーム</h1>
       <p>以下の項目をご記入の上、送信してください。</p>
+      <!-- フォームは1つだけにまとめる -->
       <form action="/submit_form" method="post">
+          <!-- ここにワンタイムトークンを仕込みます -->
+          <input type="hidden" name="form_token" value="{token}">
+
           <label>氏名（必須）:
               <input type="text" name="name" required>
           </label>
@@ -1220,7 +1230,8 @@ def show_catalog_form():
               <input type="text" name="postal_code" id="postal_code" onkeyup="fetchAddress()" required>
           </label>
 
-          <label>住所（必須）:
+          <label>住所（必須）:<br>
+              <small>※カタログ送付のために番地や部屋番号を含めた完全な住所の記入が必要です</small><br>
               <input type="text" name="address" id="address" required>
           </label>
 
@@ -1258,6 +1269,14 @@ def show_catalog_form():
 # -----------------------
 @app.route("/submit_form", methods=["POST"])
 def submit_catalog_form():
+    # 送信されたトークンをチェック
+    form_token = request.form.get('form_token')
+    if form_token != session.get('catalog_form_token'):
+        return "二重送信、あるいは不正なリクエストです。", 400
+
+    # ここでトークンを使い捨てにする
+    session.pop('catalog_form_token', None)
+
     form_data = {
         "name": request.form.get("name", "").strip(),
         "postal_code": request.form.get("postal_code", "").strip(),
@@ -1275,7 +1294,6 @@ def submit_catalog_form():
         return f"エラーが発生しました: {e}", 500
 
     return "フォーム送信ありがとうございました！ カタログ送付をお待ちください。", 200
-
 
 # -----------------------
 # 動作確認用
