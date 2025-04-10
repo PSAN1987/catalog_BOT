@@ -101,7 +101,7 @@ def write_to_spreadsheet_for_catalog(form_data: dict):
         form_data.get("school_grade", ""),
         form_data.get("other", ""),
     ]
-    worksheet.append_row(new_row, value_input_option="USER_ENTERED")
+    worksheet.append_row(new_row, value_input_option="RAW")
 
 
 # -----------------------
