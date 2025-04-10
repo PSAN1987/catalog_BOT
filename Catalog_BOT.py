@@ -312,7 +312,7 @@ def flex_usage_date():
                 },
                 {
                     "type": "text",
-                    "text": "ご使用日は注文日より? \n(注文日より使用日が2週目以降なら早割)",
+                    "text": "ご使用日は、今日より? \n(注文日より使用日が2週目以降なら早割)",
                     "size": "sm",
                     "wrap": True
                 }
@@ -1057,7 +1057,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             quote_number = write_estimate_to_spreadsheet(user_id, est_data, total_price, unit_price)
 
             reply_text = (
-                f"お見積りが完了しました。\n\n"
+                f"概算のお見積りが完了しました。\n\n"
                 f"見積番号: {quote_number}\n"
                 f"属性: {est_data['user_type']}\n"
                 f"使用日: {est_data['usage_date']}（{est_data['discount_type']}）\n"
