@@ -101,7 +101,7 @@ def write_to_spreadsheet_for_catalog(form_data: dict):
         form_data.get("school_grade", ""),
         form_data.get("other", ""),
     ]
-    worksheet.append_row(new_row, value_input_option="RAW")
+    worksheet.append_row(new_row, value_input_option="USER_ENTERED")
 
 
 # -----------------------
@@ -297,7 +297,7 @@ def flex_user_type():
 
 def flex_usage_date():
     """
-    ❷使用日 (2週目以降 or 2週目以内)
+    ❷使用日 (14日目以降 or 14日目以内)
     """
     flex_body = {
         "type": "bubble",
@@ -314,7 +314,7 @@ def flex_usage_date():
                 },
                 {
                     "type": "text",
-                    "text": "ご使用日は、今日より? \n(注文日より使用日が2週目以降なら早割)",
+                    "text": "ご使用日は、今日より? \n(注文日より使用日が14日目以降なら早割)",
                     "size": "sm",
                     "wrap": True
                 }
@@ -332,8 +332,8 @@ def flex_usage_date():
                     "height": "sm",
                     "action": {
                         "type": "message",
-                        "label": "2週目以降",
-                        "text": "2週目以降"
+                        "label": "14日目以降",
+                        "text": "14日目以降"
                     }
                 },
                 {
@@ -343,8 +343,8 @@ def flex_usage_date():
                     "height": "sm",
                     "action": {
                         "type": "message",
-                        "label": "2週目以内",
-                        "text": "2週目以内"
+                        "label": "14日目以内",
+                        "text": "14日目以内"
                     }
                 }
             ],
@@ -940,9 +940,9 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
 
     # 2) 使用日
     elif step == 2:
-        if user_message in ["2週目以降", "2週目以内"]:
+        if user_message in ["14日目以降", "14日目以内"]:
             session_data["answers"]["usage_date"] = user_message
-            session_data["answers"]["discount_type"] = "早割" if user_message == "2週目以降" else "通常"
+            session_data["answers"]["discount_type"] = "早割" if user_message == "14日目以降" else "通常"
             session_data["step"] = 3
             line_bot_api.reply_message(event.reply_token, flex_budget())
         else:
