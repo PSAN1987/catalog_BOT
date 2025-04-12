@@ -934,7 +934,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
+                TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
             )
         return
 
@@ -949,7 +949,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
+                TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
             )
         return
 
@@ -964,7 +964,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
+                TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
             )
         return
 
@@ -992,7 +992,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
+                TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
             )
         return
 
@@ -1007,7 +1007,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
+                TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
             )
         return
 
@@ -1029,7 +1029,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
+                TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
             )
         return
 
@@ -1044,7 +1044,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
                 del user_estimate_sessions[user_id]
                 line_bot_api.reply_message(
                     event.reply_token,
-                    TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
+                    TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
                 )
                 return
 
@@ -1087,7 +1087,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
                 del user_estimate_sessions[user_id]
                 line_bot_api.reply_message(
                     event.reply_token,
-                    TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
+                    TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
                 )
                 return
 
@@ -1136,7 +1136,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容が正しくありません。見積りフローを終了しました。")
+                TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
             )
         return
 
