@@ -90,11 +90,14 @@ def write_to_spreadsheet_for_catalog(form_data: dict):
     jst = pytz.timezone('Asia/Tokyo')
     now_jst_str = datetime.now(jst).strftime("%Y/%m/%d %H:%M:%S")
 
+    # address_1 と address_2 を合体して1つのセルに
+    full_address = f"{form_data.get('address_1', '')} {form_data.get('address_2', '')}".strip()
+
     new_row = [
-        now_jst_str,  # 先頭に日時を追加
+        now_jst_str,  # 先頭に日時
         form_data.get("name", ""),
         form_data.get("postal_code", ""),
-        form_data.get("address", ""),
+        full_address,  # 合体した住所
         form_data.get("phone", ""),
         form_data.get("email", ""),
         form_data.get("sns_account", ""),
@@ -102,7 +105,6 @@ def write_to_spreadsheet_for_catalog(form_data: dict):
         form_data.get("other", ""),
     ]
     worksheet.append_row(new_row, value_input_option="USER_ENTERED")
-
 
 # -----------------------
 # 簡易見積用データ構造
@@ -1112,7 +1114,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             quote_number = write_estimate_to_spreadsheet(user_id, est_data, total_price, unit_price)
 
             reply_text = (
-                f"お見積りが完了しました。\n\n"
+                f"概算のお見積りが完了しました。\n\n"
                 f"見積番号: {quote_number}\n"
                 f"属性: {est_data['user_type']}\n"
                 f"使用日: {est_data['usage_date']}（{est_data['discount_type']}）\n"
@@ -1155,17 +1157,16 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
 # -----------------------
 @app.route("/catalog_form", methods=["GET"])
 def show_catalog_form():
-    # ユニークなトークンを生成して session に記録
     token = str(uuid.uuid4())
     session['catalog_form_token'] = token
 
-    # ここで f-string を用いて {token} を実際の値に差し込む
+    # f-string で {token} を差し込む
     html_content = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>カタログ申し込みフォーム</title>
+    <title>カタログ申込フォーム</title>
     <style>
         body {{
             margin: 0;
@@ -1204,7 +1205,8 @@ def show_catalog_form():
             const response = await fetch(`https://api.zipaddress.net/?zipcode=${{pcRaw}}`);
             const data = await response.json();
             if (data.code === 200) {{
-                document.getElementById('address').value = data.data.fullAddress;
+                // 都道府県・市区町村 部分だけを address_1 に自動入力
+                document.getElementById('address_1').value = data.data.fullAddress;
             }}
         }} catch (error) {{
             console.log("住所検索失敗:", error);
@@ -1214,11 +1216,10 @@ def show_catalog_form():
 </head>
 <body>
     <div class="container">
-      <h1>カタログ申し込みフォーム</h1>
+      <h1>カタログ申込フォーム</h1>
       <p>以下の項目をご記入の上、送信してください。</p>
-      <!-- フォームは1つだけにまとめる -->
       <form action="/submit_form" method="post">
-          <!-- ここにワンタイムトークンを仕込みます -->
+          <!-- ワンタイムトークン -->
           <input type="hidden" name="form_token" value="{token}">
 
           <label>氏名（必須）:
@@ -1226,13 +1227,18 @@ def show_catalog_form():
           </label>
 
           <label>郵便番号（必須）:<br>
-              <small>※ハイフン無し7桁で入力すると自動で住所補完します</small><br>
+              <small>※自動で住所補完します。(ブラウザの場合)</small><br>
               <input type="text" name="postal_code" id="postal_code" onkeyup="fetchAddress()" required>
           </label>
 
-          <label>住所（必須）:<br>
+          <label>都道府県・市区町村（必須）:<br>
+              <small>※郵便番号入力後に自動補完されます。修正が必要な場合は上書きしてください。</small><br>
+              <input type="text" name="address_1" id="address_1" required>
+          </label>
+
+          <label>番地・部屋番号など（必須）:<br>
               <small>※カタログ送付のために番地や部屋番号を含めた完全な住所の記入が必要です</small><br>
-              <input type="text" name="address" id="address" required>
+              <input type="text" name="address_2" id="address_2" required>
           </label>
 
           <label>電話番号（必須）:
@@ -1269,18 +1275,20 @@ def show_catalog_form():
 # -----------------------
 @app.route("/submit_form", methods=["POST"])
 def submit_catalog_form():
-    # 送信されたトークンをチェック
+    # トークンチェック
     form_token = request.form.get('form_token')
     if form_token != session.get('catalog_form_token'):
         return "二重送信、あるいは不正なリクエストです。", 400
 
-    # ここでトークンを使い捨てにする
+    # トークンの使い捨て
     session.pop('catalog_form_token', None)
 
+    # フォームから受け取ったデータを辞書に格納
     form_data = {
         "name": request.form.get("name", "").strip(),
         "postal_code": request.form.get("postal_code", "").strip(),
-        "address": request.form.get("address", "").strip(),
+        "address_1": request.form.get("address_1", "").strip(),  # 都道府県・市区町村
+        "address_2": request.form.get("address_2", "").strip(),  # 番地・部屋番号
         "phone": request.form.get("phone", "").strip(),
         "email": request.form.get("email", "").strip(),
         "sns_account": request.form.get("sns_account", "").strip(),
@@ -1289,6 +1297,7 @@ def submit_catalog_form():
     }
 
     try:
+        # スプレッドシートへの書き込み（例）
         write_to_spreadsheet_for_catalog(form_data)
     except Exception as e:
         return f"エラーが発生しました: {e}", 500
