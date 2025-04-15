@@ -936,7 +936,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
+                TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
             )
         return
 
@@ -951,7 +951,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
+                TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
             )
         return
 
@@ -966,7 +966,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
+                TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
             )
         return
 
@@ -994,7 +994,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
+                TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
             )
         return
 
@@ -1009,7 +1009,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
+                TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
             )
         return
 
@@ -1031,7 +1031,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
+                TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
             )
         return
 
@@ -1046,7 +1046,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
                 del user_estimate_sessions[user_id]
                 line_bot_api.reply_message(
                     event.reply_token,
-                    TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
+                    TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
                 )
                 return
 
@@ -1089,7 +1089,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
                 del user_estimate_sessions[user_id]
                 line_bot_api.reply_message(
                     event.reply_token,
-                    TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
+                    TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
                 )
                 return
 
@@ -1138,7 +1138,7 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容が正しくありません。再度、メニューのカンタン見積りから始めてください。")
+                TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
             )
         return
 
