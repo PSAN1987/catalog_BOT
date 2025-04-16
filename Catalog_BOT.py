@@ -9,6 +9,10 @@ from flask import Flask, render_template_string, request, session
 import uuid
 from oauth2client.service_account import ServiceAccountCredentials
 
+# 追加 -----------------------------------
+import requests
+# ----------------------------------------
+
 # line-bot-sdk v2 系
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
@@ -781,14 +785,35 @@ def flex_inquiry():
     return FlexSendMessage(alt_text="お問い合わせ情報", contents=contents)
 
 
+
 # -----------------------
 # 1) LINE Messaging API 受信 (Webhook)
 # -----------------------
 @app.route("/line/callback", methods=["POST"])
 def line_callback():
-    signature = request.headers["X-Line-Signature"]
+    # X-Line-Signature を取得
+    signature = request.headers.get("X-Line-Signature", "")
+
+    # Body (JSON文字列) をテキストとして取得
     body = request.get_data(as_text=True)
 
+    # --- ログ出力1: 転送コード到達確認 ---
+    print("==> Forwarding code reached. Attempting to forward the JSON body...")
+
+    # ここでLINE受信したJSONを転送
+    response = requests.post(
+        "https://watasiino.com/line/webhook.php",
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "X-WEBHOOK-SECRET": "bfc23a884fc214d3b021b81c6d85e0f4"
+        }
+    )
+
+    # --- ログ出力2: 転送後のレスポンス確認 ---
+    print(f"==> Forward result: status={response.status_code}, response={response.text}")
+
+    # シグネチャ検証してハンドラーを呼ぶ
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
