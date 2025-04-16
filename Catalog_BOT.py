@@ -785,35 +785,14 @@ def flex_inquiry():
     return FlexSendMessage(alt_text="お問い合わせ情報", contents=contents)
 
 
-
 # -----------------------
 # 1) LINE Messaging API 受信 (Webhook)
 # -----------------------
 @app.route("/line/callback", methods=["POST"])
 def line_callback():
-    # X-Line-Signature を取得
-    signature = request.headers.get("X-Line-Signature", "")
-
-    # Body (JSON文字列) をテキストとして取得
+    signature = request.headers["X-Line-Signature"]
     body = request.get_data(as_text=True)
 
-    # --- ログ出力1: 転送コード到達確認 ---
-    print("==> Forwarding code reached. Attempting to forward the JSON body...")
-
-    # ここでLINE受信したJSONを転送
-    response = requests.post(
-        "https://watasiino.com/line/webhook.php",
-        data=body,
-        headers={
-            "Content-Type": "application/json",
-            "X-WEBHOOK-SECRET": "bfc23a884fc214d3b021b81c6d85e0f4"
-        }
-    )
-
-    # --- ログ出力2: 転送後のレスポンス確認 ---
-    print(f"==> Forward result: status={response.status_code}, response={response.text}")
-
-    # シグネチャ検証してハンドラーを呼ぶ
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
