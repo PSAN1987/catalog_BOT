@@ -999,7 +999,7 @@ def show_catalog_form():
           <label>2026年度に在籍予定の学校名・学年・クラス:
               <input type="text" name="school_info">
           </label>
-          <label>カタログの使用用途:
+          <label>カタログの使用用途（例：体育祭・文化祭・部活など）:
               <input type="text" name="usage_purpose">
           </label>
           <label>その他:
