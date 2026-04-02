@@ -1,17 +1,10 @@
 ﻿import os
 import json
 import time
-from datetime import datetime
-import pytz
 
 import gspread
-from flask import Flask, render_template_string, request, session
-import uuid
+from flask import Flask, request, abort, render_template_string
 from oauth2client.service_account import ServiceAccountCredentials
-
-# 追加 -----------------------------------
-import requests
-# ----------------------------------------
 
 # line-bot-sdk v2 系
 from linebot import LineBotApi, WebhookHandler
@@ -21,7 +14,6 @@ from linebot.models import (
 )
 
 app = Flask(__name__)
-app.secret_key = 'some_secret_key'  # セッションが必要
 
 # -----------------------
 # 環境変数取得
@@ -58,26 +50,20 @@ def get_gspread_client():
 
 
 def get_or_create_worksheet(sheet, title):
-    """
-    スプレッドシート内で該当titleのワークシートを取得。
-    なければ新規作成し、ヘッダを書き込む。
-    """
     try:
         ws = sheet.worksheet(title)
     except gspread.exceptions.WorksheetNotFound:
         ws = sheet.add_worksheet(title=title, rows=2000, cols=20)
-        # 必要であればヘッダをセット
+        # シート名を CatalogRequests に統一（または両方 2026 にする）
         if title == "CatalogRequests":
             ws.update('A1:I1', [[
-                "日時",  # ←先頭に日時列
                 "氏名", "郵便番号", "住所", "電話番号",
                 "メールアドレス", "Insta/TikTok名",
-                "在籍予定の学校名と学年", "その他(質問・要望)"
+                "在籍予定の学校名・学年・クラス", "使用用途", "その他(質問・要望)"
             ]])
         elif title == "簡易見積":
-            # 属性カラムを追加したため、A1:M1 で13列に拡張
-            ws.update('A1:M1', [[
-                "日時", "見積番号", "ユーザーID", "属性",
+            ws.update('A1:L1', [[
+                "日時", "見積番号", "ユーザーID",
                 "使用日(割引区分)", "予算", "商品名", "枚数",
                 "プリント位置", "色数", "背ネーム",
                 "合計金額", "単価"
@@ -86,54 +72,35 @@ def get_or_create_worksheet(sheet, title):
 
 
 def write_to_spreadsheet_for_catalog(form_data: dict):
+    """
+    カタログ請求フォーム送信のデータをスプレッドシートに1行追加する
+    """
     gc = get_gspread_client()
     sh = gc.open_by_key(SPREADSHEET_KEY)
     worksheet = get_or_create_worksheet(sh, "CatalogRequests")
 
-    # 日本時間の現在時刻
-    jst = pytz.timezone('Asia/Tokyo')
-    now_jst_str = datetime.now(jst).strftime("%Y/%m/%d %H:%M:%S")
-
-    # address_1 と address_2 を合体して1つのセルに
-    full_address = f"{form_data.get('address_1', '')} {form_data.get('address_2', '')}".strip()
-
     new_row = [
-        now_jst_str,  # 先頭に日時
         form_data.get("name", ""),
         form_data.get("postal_code", ""),
-        full_address,  # 合体した住所
+        form_data.get("address", ""),
         form_data.get("phone", ""),
         form_data.get("email", ""),
-        form_data.get("sns_account", ""),
-        form_data.get("school_grade", ""),
+        form_data.get("sns_account", ""),    # ←【追加】これがないと後ろのデータがズレます
+        form_data.get("school_info", ""),    # キー名を school_info に修正
+        form_data.get("usage_purpose", ""),  # 使用用途を追加
         form_data.get("other", ""),
     ]
     worksheet.append_row(new_row, value_input_option="USER_ENTERED")
 
+
 # -----------------------
 # 簡易見積用データ構造
 # -----------------------
-# 変更点はあるがインポートはそのまま
+# PRICE_TABLE_2025.py から PRICE_TABLE, COLOR_COST_MAP を import
 from PRICE_TABLE_2025 import PRICE_TABLE, COLOR_COST_MAP
 
-# ▼▼▼ 新規: プリント位置が「前のみ/背中のみ」のときの色数選択肢および対応コスト
-COLOR_COST_MAP_SINGLE = {
-    "前 or 背中 1色": (0, 0),
-    "前 or 背中 2色": (1, 0),
-    "前 or 背中 フルカラー": (0, 1),
-}
-
-# ▼▼▼ 新規: プリント位置が「前と背中」のときの色数選択肢および対応コスト
-COLOR_COST_MAP_BOTH = {
-    "前と背中 前1色 背中1色": (0, 0),
-    "前と背中 前2色 背中1色": (1, 0),
-    "前と背中 前1色 背中2色": (1, 0),
-    "前と背中 前2色 背中2色": (2, 0),
-    "前と背中 フルカラー": (0, 2),
-}
-
 # ユーザの見積フロー管理用（簡易的セッション）
-user_estimate_sessions = {}  # { user_id: {"step": n, "answers": {...}, "is_single": bool} }
+user_estimate_sessions = {}  # { user_id: {"step": n, "answers": {...}} }
 
 
 def write_estimate_to_spreadsheet(user_id, estimate_data, total_price, unit_price):
@@ -146,15 +113,10 @@ def write_estimate_to_spreadsheet(user_id, estimate_data, total_price, unit_pric
 
     quote_number = str(int(time.time()))  # 見積番号を UNIX時間 で仮生成
 
-    # 日本時間の現在時刻
-    jst = pytz.timezone('Asia/Tokyo')
-    now_jst_str = datetime.now(jst).strftime("%Y/%m/%d %H:%M:%S")
-
     new_row = [
-        now_jst_str,
+        time.strftime("%Y/%m/%d %H:%M:%S"),
         quote_number,
         user_id,
-        estimate_data['user_type'],  # 追加した「属性」
         f"{estimate_data['usage_date']}({estimate_data['discount_type']})",
         estimate_data['budget'],
         estimate_data['item'],
@@ -188,19 +150,10 @@ def calculate_estimate(estimate_data):
     """
     item_name = estimate_data['item']
     discount_type = estimate_data['discount_type']
-    # 枚数選択肢を実数化
-    quantity_map = {
-        "20～29枚": 20,
-        "30～39枚": 30,
-        "40～49枚": 40,
-        "50～99枚": 50,
-        "100枚以上": 100
-    }
-    quantity = quantity_map.get(estimate_data['quantity'], 1)
-
+    quantity = int(estimate_data['quantity'])
     print_position = estimate_data['print_position']
     color_choice = estimate_data['color_count']
-    back_name = estimate_data.get('back_name', "")  # 存在しない場合は空文字
+    back_name = estimate_data['back_name']
 
     row = find_price_row(item_name, discount_type, quantity)
     if row is None:
@@ -214,24 +167,19 @@ def calculate_estimate(estimate_data):
     else:
         pos_add = row["pos_add"]
 
-    # ▼▼▼ 変更点: プリント位置によって color_cost_map を切り替え
-    if print_position in ["前のみ", "背中のみ"]:
-        color_add_count, fullcolor_add_count = COLOR_COST_MAP_SINGLE[color_choice]
-        # 背ネームはスキップ扱い => 0円
-        back_name_fee = 0
-    else:
-        color_add_count, fullcolor_add_count = COLOR_COST_MAP_BOTH[color_choice]
-        # 背ネームありの場合を計算
-        if back_name == "ネーム&背番号セット":
-            back_name_fee = row["set_name_num"]
-        elif back_name == "ネーム(大)":
-            back_name_fee = row["big_name"]
-        elif back_name == "番号(大)":
-            back_name_fee = row["big_num"]
-        else:
-            back_name_fee = 0
-
+    # 色数追加
+    color_add_count, fullcolor_add_count = COLOR_COST_MAP[color_choice]
     color_fee = color_add_count * row["color_add"] + fullcolor_add_count * row["fullcolor_add"]
+
+    # 背ネーム・番号
+    if back_name == "ネーム&背番号セット":
+        back_name_fee = row["set_name_num"]
+    elif back_name == "ネーム(大)":
+        back_name_fee = row["big_name"]
+    elif back_name == "番号(大)":
+        back_name_fee = row["big_num"]
+    else:
+        back_name_fee = 0
 
     unit_price = base_price + pos_add + color_fee + back_name_fee
     total_price = unit_price * quantity
@@ -239,71 +187,16 @@ def calculate_estimate(estimate_data):
     return total_price, unit_price
 
 
+from linebot.models import FlexSendMessage
+
+
 # -----------------------
 # ここからFlex Message定義
 # -----------------------
-def flex_user_type():
-    """
-    ❶属性 (学生 or 一般)
-    """
-    flex_body = {
-        "type": "bubble",
-        "hero": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "❶属性",
-                    "weight": "bold",
-                    "size": "lg",
-                    "align": "center"
-                },
-                {
-                    "type": "text",
-                    "text": "ご利用者の属性を選択してください。",
-                    "size": "sm",
-                    "wrap": True
-                }
-            ]
-        },
-        "footer": {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "sm",
-            "contents": [
-                {
-                    "type": "button",
-                    "style": "primary",
-                    "color": "#fc9cc2",
-                    "height": "sm",
-                    "action": {
-                        "type": "message",
-                        "label": "学生",
-                        "text": "学生"
-                    }
-                },
-                {
-                    "type": "button",
-                    "style": "primary",
-                    "color": "#fc9cc2",
-                    "height": "sm",
-                    "action": {
-                        "type": "message",
-                        "label": "一般",
-                        "text": "一般"
-                    }
-                }
-            ],
-            "flex": 0
-        }
-    }
-    return FlexSendMessage(alt_text="属性を選択してください", contents=flex_body)
-
 
 def flex_usage_date():
     """
-    ❷使用日 (14日目以降 or 14日目以内)
+    ❶使用日 (14日前以上 or 14日前以内)
     """
     flex_body = {
         "type": "bubble",
@@ -313,14 +206,14 @@ def flex_usage_date():
             "contents": [
                 {
                     "type": "text",
-                    "text": "❷使用日",
+                    "text": "❶使用日",
                     "weight": "bold",
                     "size": "lg",
                     "align": "center"
                 },
                 {
                     "type": "text",
-                    "text": "ご使用日は、今日より? \n(注文日より使用日が14日目以降なら早割)",
+                    "text": "大会やイベントで使用する日程を教えてください。(注文日が14日前以上なら早割)",
                     "size": "sm",
                     "wrap": True
                 }
@@ -334,23 +227,21 @@ def flex_usage_date():
                 {
                     "type": "button",
                     "style": "primary",
-                    "color": "#fc9cc2",
                     "height": "sm",
                     "action": {
                         "type": "message",
-                        "label": "14日目以降",
-                        "text": "14日目以降"
+                        "label": "14日前以上",
+                        "text": "14日前以上"
                     }
                 },
                 {
                     "type": "button",
                     "style": "primary",
-                    "color": "#fc9cc2",
                     "height": "sm",
                     "action": {
                         "type": "message",
-                        "label": "14日目以内",
-                        "text": "14日目以内"
+                        "label": "14日前以内",
+                        "text": "14日前以内"
                     }
                 }
             ],
@@ -362,15 +253,14 @@ def flex_usage_date():
 
 def flex_budget():
     """
-    ❸1枚当たりの予算
+    ❷1枚当たりの予算
     """
-    budgets = ["特になし", "1,000円以内", "1,500円以内", "2,000円以内", "2,500円以内", "3,000円以内", "3,500円以内"]
+    budgets = ["1,000円", "2,000円", "3,000円", "4,000円", "5,000円"]
     buttons = []
     for b in budgets:
         buttons.append({
             "type": "button",
             "style": "primary",
-            "color": "#fc9cc2",
             "height": "sm",
             "action": {
                 "type": "message",
@@ -387,7 +277,7 @@ def flex_budget():
             "contents": [
                 {
                     "type": "text",
-                    "text": "❸1枚当たりの予算",
+                    "text": "❷1枚当たりの予算",
                     "weight": "bold",
                     "size": "lg",
                     "align": "center"
@@ -413,7 +303,7 @@ def flex_budget():
 
 def flex_item_select():
     """
-    ❹商品名
+    ❸商品名
     """
     items = [
         "ゲームシャツ",
@@ -424,7 +314,7 @@ def flex_item_select():
         "ドライTシャツ",
         "ハイクオリティTシャツ",
         "ドライポロシャツ",
-        "ドライロングスリーブTシャツ",  # 修正
+        "ドライロングスリープTシャツ",
         "クルーネックライトトレーナー",
         "ジップアップライトパーカー",
         "フーデッドライトパーカー",
@@ -439,7 +329,6 @@ def flex_item_select():
             buttons.append({
                 "type": "button",
                 "style": "primary",
-                "color": "#fc9cc2",
                 "height": "sm",
                 "action": {
                     "type": "message",
@@ -455,7 +344,7 @@ def flex_item_select():
                 "contents": [
                     {
                         "type": "text",
-                        "text": "❹商品名",
+                        "text": "❸商品名",
                         "weight": "bold",
                         "size": "lg",
                         "align": "center"
@@ -486,15 +375,14 @@ def flex_item_select():
 
 def flex_quantity():
     """
-    ❺枚数
+    ❹枚数
     """
-    quantities = ["20～29枚", "30～39枚", "40～49枚", "50～99枚", "100枚以上"]
+    quantities = ["20", "30", "40", "50", "100"]
     buttons = []
     for q in quantities:
         buttons.append({
             "type": "button",
             "style": "primary",
-            "color": "#fc9cc2",
             "height": "sm",
             "action": {
                 "type": "message",
@@ -511,7 +399,7 @@ def flex_quantity():
             "contents": [
                 {
                     "type": "text",
-                    "text": "❺枚数",
+                    "text": "❹枚数",
                     "weight": "bold",
                     "size": "lg",
                     "align": "center"
@@ -536,7 +424,7 @@ def flex_quantity():
 
 def flex_print_position():
     """
-    ❻プリント位置
+    ❺プリント位置
     """
     positions = ["前のみ", "背中のみ", "前と背中"]
     buttons = []
@@ -544,7 +432,6 @@ def flex_print_position():
         buttons.append({
             "type": "button",
             "style": "primary",
-            "color": "#fc9cc2",
             "height": "sm",
             "action": {
                 "type": "message",
@@ -561,7 +448,7 @@ def flex_print_position():
             "contents": [
                 {
                     "type": "text",
-                    "text": "❻プリント位置",
+                    "text": "❺プリント位置",
                     "weight": "bold",
                     "size": "lg",
                     "align": "center"
@@ -584,111 +471,76 @@ def flex_print_position():
     return FlexSendMessage(alt_text="プリント位置を選択してください", contents=flex_body)
 
 
-# ▼▼▼ 新規: プリント位置が「前のみ」「背中のみ」の場合の ❼色数
-def flex_color_count_single():
+def flex_color_count():
     """
-    ❼色数（シングル: 前のみ / 背中のみ）
+    ❻色数
     """
-    color_choices = list(COLOR_COST_MAP_SINGLE.keys())
-    buttons_bubbles = []
-    for c in color_choices:
-        buttons_bubbles.append({
-            "type": "button",
-            "style": "primary",
-            "color": "#fc9cc2",
-            "height": "sm",
-            "action": {
-                "type": "message",
-                "label": c,
-                "text": c
-            }
-        })
-
-    flex_body = {
-        "type": "bubble",
-        "hero": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "❼色数",
-                    "weight": "bold",
-                    "size": "lg",
-                    "align": "center"
-                },
-                {
-                    "type": "text",
-                    "text": "プリントの色数を選択してください。\n（前のみ/背中のみ）",
-                    "size": "sm",
-                    "wrap": True
+    color_list = [
+        "前 or 背中 1色",
+        "前 or 背中 2色",
+        "前 or 背中 フルカラー",
+        "前と背中 前1色 背中1色",
+        "前と背中 前2色 背中1色",
+        "前と背中 前1色 背中2色",
+        "前と背中 前2色 背中2色",
+        "前と背中 フルカラー",
+    ]
+    chunk_size = 4
+    color_bubbles = []
+    for i in range(0, len(color_list), chunk_size):
+        chunk_part = color_list[i:i + chunk_size]
+        buttons = []
+        for c in chunk_part:
+            buttons.append({
+                "type": "button",
+                "style": "primary",
+                "height": "sm",
+                "action": {
+                    "type": "message",
+                    "label": c[:12],  # ラベル文字数制限への対策
+                    "text": c
                 }
-            ]
-        },
-        "footer": {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "sm",
-            "contents": buttons_bubbles
-        }
-    }
-    return FlexSendMessage(alt_text="色数を選択してください", contents=flex_body)
-
-
-# ▼▼▼ 新規: プリント位置が「前と背中」の場合の ❼色数
-def flex_color_count_both():
-    """
-    ❼色数（両面: 前と背中）
-    """
-    color_choices = list(COLOR_COST_MAP_BOTH.keys())
-    buttons_bubbles = []
-    for c in color_choices:
-        buttons_bubbles.append({
-            "type": "button",
-            "style": "primary",
-            "color": "#fc9cc2",
-            "height": "sm",
-            "action": {
-                "type": "message",
-                "label": c,
-                "text": c
+            })
+        bubble = {
+            "type": "bubble",
+            "hero": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "❻色数",
+                        "weight": "bold",
+                        "size": "lg",
+                        "align": "center"
+                    },
+                    {
+                        "type": "text",
+                        "text": "プリントの色数を選択してください。",
+                        "size": "sm",
+                        "wrap": True
+                    }
+                ]
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "sm",
+                "contents": buttons
             }
-        })
-
-    flex_body = {
-        "type": "bubble",
-        "hero": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": [
-                {
-                    "type": "text",
-                    "text": "❼色数",
-                    "weight": "bold",
-                    "size": "lg",
-                    "align": "center"
-                },
-                {
-                    "type": "text",
-                    "text": "プリントの色数を選択してください。\n（前と背中）",
-                    "size": "sm",
-                    "wrap": True
-                }
-            ]
-        },
-        "footer": {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "sm",
-            "contents": buttons_bubbles
         }
+        color_bubbles.append(bubble)
+
+    carousel = {
+        "type": "carousel",
+        "contents": color_bubbles
     }
-    return FlexSendMessage(alt_text="色数を選択してください", contents=flex_body)
+    return FlexSendMessage(alt_text="色数を選択してください", contents=carousel)
 
 
 def flex_back_name():
     """
-    ❽背ネーム・番号
+    ❼背ネーム・番号
     """
     names = ["ネーム&背番号セット", "ネーム(大)", "番号(大)", "背ネーム・番号を使わない"]
     buttons = []
@@ -696,7 +548,6 @@ def flex_back_name():
         buttons.append({
             "type": "button",
             "style": "primary",
-            "color": "#fc9cc2",
             "height": "sm",
             "action": {
                 "type": "message",
@@ -713,7 +564,7 @@ def flex_back_name():
             "contents": [
                 {
                     "type": "text",
-                    "text": "❽背ネーム・番号",
+                    "text": "❼背ネーム・番号",
                     "weight": "bold",
                     "size": "lg",
                     "align": "center"
@@ -742,7 +593,6 @@ def flex_back_name():
     return FlexSendMessage(alt_text="背ネーム・番号を選択してください", contents=flex_body)
 
 
-
 # -----------------------
 # お問い合わせ時に返信するFlex Message
 # -----------------------
@@ -755,14 +605,27 @@ def flex_inquiry():
                 "type": "bubble",
                 "hero": {
                     "type": "image",
-                    "url": "https://catalog-bot-zf1t.onrender.com/IMG_5765.PNG",
+                    # ↓raw.githubusercontent.com のURLを指定
+                    "url": "https://raw.githubusercontent.com/PSAN1987/catalog_BOT/main/IMG_5765.PNG",
                     "size": "full",
-                    "aspectRatio": "501:556",
+                    "aspectRatio": "20:13",
                     "aspectMode": "cover",
                     "action": {
                         "type": "uri",
                         "uri": "https://graffitees.jp/faq/"
                     }
+                },
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "FAQはこちら",
+                            "size": "md",
+                            "weight": "bold"
+                        }
+                    ]
                 }
             },
             # 2個目: 有人チャット
@@ -770,14 +633,26 @@ def flex_inquiry():
                 "type": "bubble",
                 "hero": {
                     "type": "image",
-                    "url": "https://catalog-bot-zf1t.onrender.com/IMG_5766.PNG",
+                    "url": "https://raw.githubusercontent.com/PSAN1987/catalog_BOT/main/IMG_5766.PNG",
                     "size": "full",
-                    "aspectRatio": "501:556",
+                    "aspectRatio": "20:13",
                     "aspectMode": "cover",
                     "action": {
                         "type": "message",
                         "text": "#有人チャット"
                     }
+                },
+                "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                        {
+                            "type": "text",
+                            "text": "オペレーター対応",
+                            "size": "md",
+                            "weight": "bold"
+                        }
+                    ]
                 }
             }
         ]
@@ -810,7 +685,7 @@ def handle_message(event: MessageEvent):
     user_message = event.message.text.strip()
 
     # 1) お問い合わせ対応
-    if user_message == "お問い合わせ":
+    if user_message == "#お問い合わせ":
         line_bot_api.reply_message(
             event.reply_token,
             flex_inquiry()
@@ -819,15 +694,15 @@ def handle_message(event: MessageEvent):
 
     # 2) 有人チャット
     if user_message == "#有人チャット":
+        # 指定されたメッセージを返信
         reply_text = (
-            "担当スタッフが順番に対応いたします。\n"
-    "お繋ぎしている間、下記の情報をお知らせください✨\n\n"
-    "①ご使用日：\n"
-    "②ご購入枚数(ざっくりでOK)：\n"
-    "③ご予算(1枚あたり)：\n"
-    "④デザイン(スクショでOK)：\n\n"
-    "その他のご質問もお気軽にご相談ください！"
-
+            "有人チャットに接続いたします。\n"
+            "ご検討中のデザインを画像やイラストでお送りください。\n\n"
+            "※当ショップの営業時間は10：00～18：00となります。\n"
+            "営業時間外のお問い合わせにつきましては確認ができ次第の回答となります。\n"
+            "誠に恐れ入りますが、ご了承くださいませ。\n\n"
+            "その他ご要望などがございましたらメッセージでお送りくださいませ。\n"
+            "よろしくお願い致します。"
         )
         line_bot_api.reply_message(
             event.reply_token,
@@ -841,12 +716,13 @@ def handle_message(event: MessageEvent):
         return
 
     # 見積りフロー開始
-    if user_message == "カンタン見積り":
+    if user_message == "お見積り":
         start_estimate_flow(event)
         return
 
-    # カタログ案内 (トリガー例: "キャンペーン" or "catalog" など含む場合)
-    if "キャンペーン" in user_message or "catalog" in user_message.lower():
+    # カタログ案内
+    # 完全一致で案内文を返信
+    if "カタログ" in user_message or "catalog" in user_message.lower():
         send_catalog_info(event)
         return
 
@@ -856,7 +732,7 @@ def handle_message(event: MessageEvent):
 
 def send_catalog_info(event: MessageEvent):
     """
-    カタログ案内メッセージ
+    カタログ案内メッセージ（新しい文面に更新済み）
     """
     reply_text = (
         "🎁➖➖➖➖➖➖➖➖🎁\n"
@@ -874,9 +750,10 @@ def send_catalog_info(event: MessageEvent):
         "フォロー後、下記のフォームからお申込みください👇\n"
         "📩 カタログ申込みフォーム\n"
         "https://catalog-bot-1.onrender.com/catalog_form\n"
-        "⚠️ 注意：サブアカウントや重複申込みはご遠慮ください。\n\n"
+        "⚠️ 注意：サブアカウントや重複申込みはご遠慮ください。\n"
+        "⚠️ 注意：住所や氏名等に不備がある場合はお届けができません。\n\n"
         "【カタログ発送時期】\n"
-        "📅 2025年4月中旬より郵送で発送予定です。\n\n"
+        "📅 2026年4月中旬より郵送で発送予定です。\n\n"
         "【配布数について】\n"
         "先着300名様分を予定しています。\n"
         "※応募多数となった場合、配布数の増加や抽選となる可能性があります。\n\n"
@@ -893,90 +770,53 @@ def send_catalog_info(event: MessageEvent):
 # -----------------------
 def start_estimate_flow(event: MessageEvent):
     """
-    見積フローを開始し、step=1(属性)を提示する
+    見積りフロー開始: ステップ1(使用日) へ
     """
     user_id = event.source.user_id
-
-    # セッションを初期化
     user_estimate_sessions[user_id] = {
         "step": 1,
-        "answers": {},
-        "is_single": False  # 新規: 前のみ/背中のみかどうか
+        "answers": {}
     }
-
-    # 最初のステップ（属性選択Flex）を送る
     line_bot_api.reply_message(
         event.reply_token,
-        flex_user_type()
+        flex_usage_date()
     )
 
 
 def process_estimate_flow(event: MessageEvent, user_message: str):
     """
     見積フロー中のやり取り
-    step 1: 属性
-    step 2: 使用日
-    step 3: 予算
-    step 4: 商品名
-    step 5: 枚数
-    step 6: プリント位置
-    step 7: 色数
-       - (前のみ/背中のみ)の場合 -> フロー完了へ
-       - (前と背中)の場合 -> step 8: 背ネーム・番号 -> step 9: 完了
     """
     user_id = event.source.user_id
-    if user_id not in user_estimate_sessions:
-        return
-
     session_data = user_estimate_sessions[user_id]
     step = session_data["step"]
 
-    # 1) 属性
     if step == 1:
-        if user_message in ["学生", "一般"]:
-            session_data["answers"]["user_type"] = user_message
-            session_data["step"] = 2
-            line_bot_api.reply_message(event.reply_token, flex_usage_date())
-        else:
-            del user_estimate_sessions[user_id]
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
-            )
-        return
-
-    # 2) 使用日
-    elif step == 2:
-        if user_message in ["14日目以降", "14日目以内"]:
+        # 1.使用日
+        if user_message in ["14日前以上", "14日前以内"]:
             session_data["answers"]["usage_date"] = user_message
-            session_data["answers"]["discount_type"] = "早割" if user_message == "14日目以降" else "通常"
-            session_data["step"] = 3
+            session_data["answers"]["discount_type"] = "早割" if user_message == "14日前以上" else "通常"
+            session_data["step"] = 2
             line_bot_api.reply_message(event.reply_token, flex_budget())
         else:
-            del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
+                TextSendMessage(text="「14日前以上」または「14日前以内」を選択してください。")
             )
-        return
-
-    # 3) 1枚当たりの予算
-    elif step == 3:
-        valid_budgets = ["特になし", "1,000円以内", "1,500円以内", "2,000円以内", "2,500円以内", "3,000円以内", "3,500円以内"]
-        if user_message in valid_budgets:
+    elif step == 2:
+        # 2.1枚当たりの予算
+        budgets = ["1,000円", "2,000円", "3,000円", "4,000円", "5,000円"]
+        if user_message in budgets:
             session_data["answers"]["budget"] = user_message
-            session_data["step"] = 4
+            session_data["step"] = 3
             line_bot_api.reply_message(event.reply_token, flex_item_select())
         else:
-            del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
+                TextSendMessage(text="1枚あたりの予算をボタンから選択してください。")
             )
-        return
-
-    # 4) 商品名
-    elif step == 4:
+    elif step == 3:
+        # 3.商品名
         items = [
             "ゲームシャツ",
             "ストライプドライベースボールシャツ",
@@ -986,146 +826,75 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
             "ドライTシャツ",
             "ハイクオリティTシャツ",
             "ドライポロシャツ",
-            "ドライロングスリーブTシャツ",
+            "ドライロングスリープTシャツ",
             "クルーネックライトトレーナー",
             "ジップアップライトパーカー",
             "フーデッドライトパーカー",
         ]
         if user_message in items:
             session_data["answers"]["item"] = user_message
-            session_data["step"] = 5
+            session_data["step"] = 4
             line_bot_api.reply_message(event.reply_token, flex_quantity())
         else:
-            del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
+                TextSendMessage(text="商品名をボタンから選択してください。")
             )
-        return
-
-    # 5) 枚数
-    elif step == 5:
-        valid_choices = ["20～29枚", "30～39枚", "40～49枚", "50～99枚", "100枚以上"]
+    elif step == 4:
+        # 4.枚数
+        valid_choices = ["10", "20", "30", "40", "50", "100"]
         if user_message in valid_choices:
             session_data["answers"]["quantity"] = user_message
-            session_data["step"] = 6
+            session_data["step"] = 5
             line_bot_api.reply_message(event.reply_token, flex_print_position())
         else:
-            del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
+                TextSendMessage(text="枚数をボタンから選択してください。")
             )
-        return
-
-    # 6) プリント位置
-    elif step == 6:
+    elif step == 5:
+        # 5.プリント位置
         valid_positions = ["前のみ", "背中のみ", "前と背中"]
         if user_message in valid_positions:
             session_data["answers"]["print_position"] = user_message
+            session_data["step"] = 6
+            line_bot_api.reply_message(event.reply_token, flex_color_count())
+        else:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="プリント位置を選択してください。")
+            )
+    elif step == 6:
+        # 6.色数
+        color_list = list(COLOR_COST_MAP.keys())
+        if user_message in color_list:
+            session_data["answers"]["color_count"] = user_message
             session_data["step"] = 7
-
-            # 新規: プリント位置が 前のみ/背中のみ なら is_single=True
-            if user_message in ["前のみ", "背中のみ"]:
-                session_data["is_single"] = True
-                line_bot_api.reply_message(event.reply_token, flex_color_count_single())
-            else:
-                session_data["is_single"] = False
-                line_bot_api.reply_message(event.reply_token, flex_color_count_both())
-        else:
-            del user_estimate_sessions[user_id]
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
-            )
-        return
-
-    # 7) 色数
-    elif step == 7:
-        # プリント位置が「前のみ/背中のみ」→ is_single=True
-        #           が「前と背中」 → is_single=False
-        if session_data["is_single"]:
-            # シングル面の色数マップをチェック
-            if user_message not in COLOR_COST_MAP_SINGLE:
-                # 不正入力
-                del user_estimate_sessions[user_id]
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
-                )
-                return
-
-            # OK
-            session_data["answers"]["color_count"] = user_message
-            # 背ネーム・番号はスキップ => back_name=空 or "なし" として保存
-            session_data["answers"]["back_name"] = "なし"
-
-            # 計算
-            est_data = session_data["answers"]
-            total_price, unit_price = calculate_estimate(est_data)
-            quote_number = write_estimate_to_spreadsheet(user_id, est_data, total_price, unit_price)
-
-            reply_text = (
-                f"概算のお見積りが完了しました。\n\n"
-                f"見積番号: {quote_number}\n"
-                f"属性: {est_data['user_type']}\n"
-                f"使用日: {est_data['usage_date']}（{est_data['discount_type']}）\n"
-                f"予算: {est_data['budget']}\n"
-                f"商品: {est_data['item']}\n"
-                f"枚数: {est_data['quantity']}\n"
-                f"プリント位置: {est_data['print_position']}\n"
-                f"色数: {est_data['color_count']}\n"
-                f"背ネーム・番号: なし\n\n"
-                f"【合計金額】¥{total_price:,}\n"
-                f"【1枚あたり】¥{unit_price:,}\n"
-            )
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=reply_text)
-            )
-
-            # フロー終了
-            del user_estimate_sessions[user_id]
-
-        else:
-            # 前と背中 の場合
-            if user_message not in COLOR_COST_MAP_BOTH:
-                # 不正入力
-                del user_estimate_sessions[user_id]
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
-                )
-                return
-
-            # OK
-            session_data["answers"]["color_count"] = user_message
-            # 次のstep(8)で背ネーム・番号を聞く
-            session_data["step"] = 8
             line_bot_api.reply_message(event.reply_token, flex_back_name())
-
-        return
-
-    # 8) 背ネーム・番号 (「前と背中」だけがここへ進む)
-    elif step == 8:
+        else:
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="色数を選択してください。")
+            )
+    elif step == 7:
+        # 7.背ネーム・番号
         valid_back_names = ["ネーム&背番号セット", "ネーム(大)", "番号(大)", "背ネーム・番号を使わない"]
         if user_message in valid_back_names:
             session_data["answers"]["back_name"] = user_message
-            session_data["step"] = 9
-
+            session_data["step"] = 8
             # 見積計算
             est_data = session_data["answers"]
+            quantity = int(est_data["quantity"])
             total_price, unit_price = calculate_estimate(est_data)
             quote_number = write_estimate_to_spreadsheet(user_id, est_data, total_price, unit_price)
 
             reply_text = (
-                f"概算のお見積りが完了しました。\n\n"
+                f"お見積りが完了しました。\n\n"
                 f"見積番号: {quote_number}\n"
-                f"属性: {est_data['user_type']}\n"
                 f"使用日: {est_data['usage_date']}（{est_data['discount_type']}）\n"
                 f"予算: {est_data['budget']}\n"
                 f"商品: {est_data['item']}\n"
-                f"枚数: {est_data['quantity']}\n"
+                f"枚数: {quantity}枚\n"
                 f"プリント位置: {est_data['print_position']}\n"
                 f"色数: {est_data['color_count']}\n"
                 f"背ネーム・番号: {est_data['back_name']}\n\n"
@@ -1136,25 +905,21 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
                 event.reply_token,
                 TextSendMessage(text=reply_text)
             )
-
             # フロー終了
             del user_estimate_sessions[user_id]
         else:
-            del user_estimate_sessions[user_id]
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="入力内容に誤りがあるようです。 \nお手数をおかけしますが、再度メニューの「カンタン見積り」より、該当の項目を選択タブからお選びください。\n※テキストの直接入力はご利用いただけませんので、ご了承くださいませ。")
+                TextSendMessage(text="背ネーム・番号の選択肢からお選びください。")
             )
-        return
-
     else:
-        # 何らかの想定外のエラー
-        del user_estimate_sessions[user_id]
+        # それ以外
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text="エラーが発生しました。見積りフローを終了しました。最初からやり直してください。")
+            TextSendMessage(text="エラーが発生しました。最初からやり直してください。")
         )
-        return
+        if user_id in user_estimate_sessions:
+            del user_estimate_sessions[user_id]
 
 
 # -----------------------
@@ -1162,88 +927,75 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
 # -----------------------
 @app.route("/catalog_form", methods=["GET"])
 def show_catalog_form():
-    token = str(uuid.uuid4())
-    session['catalog_form_token'] = token
-
-    # f-string で {token} を差し込む
-    html_content = f"""<!DOCTYPE html>
+    html_content = """
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>カタログ申込フォーム</title>
+    <title>カタログ申し込みフォーム</title>
     <style>
-        body {{
+        body {
             margin: 0;
             padding: 0;
             font-family: sans-serif;
-        }}
-        .container {{
+        }
+        .container {
             max-width: 600px; 
             margin: 0 auto;
             padding: 1em;
-        }}
-        label {{
+        }
+        label {
             display: block;
             margin-bottom: 0.5em;
-        }}
-        input[type=text], input[type=email], textarea {{
+        }
+        input[type=text], input[type=email], textarea {
             width: 100%;
             padding: 0.5em;
             margin-top: 0.3em;
             box-sizing: border-box;
-        }}
-        input[type=submit] {{
+        }
+        input[type=submit] {
             padding: 0.7em 1em;
             font-size: 1em;
             margin-top: 1em;
-        }}
+        }
     </style>
     <script>
-    async function fetchAddress() {{
+    async function fetchAddress() {
         let pcRaw = document.getElementById('postal_code').value.trim();
         pcRaw = pcRaw.replace('-', '');
-        if (pcRaw.length < 7) {{
+        if (pcRaw.length < 7) {
             return;
-        }}
-        try {{
-            const response = await fetch(`https://api.zipaddress.net/?zipcode=${{pcRaw}}`);
+        }
+        try {
+            const response = await fetch(`https://api.zipaddress.net/?zipcode=${pcRaw}`);
             const data = await response.json();
-            if (data.code === 200) {{
-                // 都道府県・市区町村 部分だけを address_1 に自動入力
-                document.getElementById('address_1').value = data.data.fullAddress;
-            }}
-        }} catch (error) {{
+            if (data.code === 200) {
+                document.getElementById('address').value = data.data.fullAddress;
+            }
+        } catch (error) {
             console.log("住所検索失敗:", error);
-        }}
-    }}
+        }
+    }
     </script>
 </head>
 <body>
     <div class="container">
-      <h1>カタログ申込フォーム</h1>
+      <h1>カタログ申し込みフォーム</h1>
       <p>以下の項目をご記入の上、送信してください。</p>
       <form action="/submit_form" method="post">
-          <!-- ワンタイムトークン -->
-          <input type="hidden" name="form_token" value="{token}">
-
           <label>氏名（必須）:
               <input type="text" name="name" required>
           </label>
 
           <label>郵便番号（必須）:<br>
-              <small>※自動で住所補完します。(ブラウザの場合)</small><br>
+              <small>※ハイフン無し7桁で入力すると自動で住所補完します</small><br>
               <input type="text" name="postal_code" id="postal_code" onkeyup="fetchAddress()" required>
           </label>
 
-          <label>都道府県・市区町村（必須）:<br>
-              <small>※郵便番号入力後に自動補完されます。修正が必要な場合は上書きしてください。</small><br>
-              <input type="text" name="address_1" id="address_1" required>
-          </label>
-
-          <label>番地・部屋番号など（必須）:<br>
-              <small>※カタログ送付のために番地や部屋番号を含めた完全な住所の記入が必要です</small><br>
-              <input type="text" name="address_2" id="address_2" required>
+          <label>住所（必須）:
+              <input type="text" name="address" id="address" required>
           </label>
 
           <label>電話番号（必須）:
@@ -1258,8 +1010,12 @@ def show_catalog_form():
               <input type="text" name="sns_account" required>
           </label>
 
-          <label>2025年度に在籍予定の学校名と学年（未記入可）:
-              <input type="text" name="school_grade">
+          <label>2026年度に在籍予定の学校名・学年・クラス（未記入可）:
+              <input type="text" name="school_info">
+          </label>
+
+          <label>カタログの使用用途（例：体育祭・文化祭・部活など）:
+              <input type="text" name="usage_purpose">
           </label>
 
           <label>その他（質問やご要望など）:
@@ -1280,34 +1036,25 @@ def show_catalog_form():
 # -----------------------
 @app.route("/submit_form", methods=["POST"])
 def submit_catalog_form():
-    # トークンチェック
-    form_token = request.form.get('form_token')
-    if form_token != session.get('catalog_form_token'):
-        return "二重送信、あるいは不正なリクエストです。", 400
-
-    # トークンの使い捨て
-    session.pop('catalog_form_token', None)
-
-    # フォームから受け取ったデータを辞書に格納
     form_data = {
         "name": request.form.get("name", "").strip(),
         "postal_code": request.form.get("postal_code", "").strip(),
-        "address_1": request.form.get("address_1", "").strip(),  # 都道府県・市区町村
-        "address_2": request.form.get("address_2", "").strip(),  # 番地・部屋番号
+        "address": request.form.get("address", "").strip(),
         "phone": request.form.get("phone", "").strip(),
         "email": request.form.get("email", "").strip(),
         "sns_account": request.form.get("sns_account", "").strip(),
-        "school_grade": request.form.get("school_grade", "").strip(),
+        "school_info": request.form.get("school_info", "").strip(),  # キー名を変更
+        "usage_purpose": request.form.get("usage_purpose", "").strip(), # 新規追加
         "other": request.form.get("other", "").strip(),
     }
 
     try:
-        # スプレッドシートへの書き込み（例）
         write_to_spreadsheet_for_catalog(form_data)
     except Exception as e:
         return f"エラーが発生しました: {e}", 500
 
     return "フォーム送信ありがとうございました！ カタログ送付をお待ちください。", 200
+
 
 # -----------------------
 # 動作確認用
