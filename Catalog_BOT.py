@@ -58,24 +58,18 @@ def get_gspread_client():
 
 
 def get_or_create_worksheet(sheet, title):
-    """
-    スプレッドシート内で該当titleのワークシートを取得。
-    なければ新規作成し、ヘッダを書き込む。
-    """
     try:
         ws = sheet.worksheet(title)
     except gspread.exceptions.WorksheetNotFound:
         ws = sheet.add_worksheet(title=title, rows=2000, cols=20)
-        # 必要であればヘッダをセット
         if title == "CatalogRequests":
-            ws.update('A1:I1', [[
-                "日時",  # ←先頭に日時列
-                "氏名", "郵便番号", "住所", "電話番号",
+            # 10列構成に変更
+            ws.update('A1:J1', [[
+                "日時", "氏名", "郵便番号", "住所", "電話番号",
                 "メールアドレス", "Insta/TikTok名",
-                "在籍予定の学校名と学年", "その他(質問・要望)"
+                "在籍予定の学校名・学年・クラス", "使用用途", "その他(質問・要望)"
             ]])
         elif title == "簡易見積":
-            # 属性カラムを追加したため、A1:M1 で13列に拡張
             ws.update('A1:M1', [[
                 "日時", "見積番号", "ユーザーID", "属性",
                 "使用日(割引区分)", "予算", "商品名", "枚数",
@@ -90,22 +84,27 @@ def write_to_spreadsheet_for_catalog(form_data: dict):
     sh = gc.open_by_key(SPREADSHEET_KEY)
     worksheet = get_or_create_worksheet(sh, "CatalogRequests")
 
+    # --- 重複チェック (メールアドレス) ---
+    email_list = worksheet.col_values(6) 
+    new_email = form_data.get("email", "").strip()
+    if new_email in email_list:
+        raise ValueError("ALREADY_REGISTERED")
+
     # 日本時間の現在時刻
     jst = pytz.timezone('Asia/Tokyo')
     now_jst_str = datetime.now(jst).strftime("%Y/%m/%d %H:%M:%S")
-
-    # address_1 と address_2 を合体して1つのセルに
     full_address = f"{form_data.get('address_1', '')} {form_data.get('address_2', '')}".strip()
 
     new_row = [
-        now_jst_str,  # 先頭に日時
+        now_jst_str,
         form_data.get("name", ""),
         form_data.get("postal_code", ""),
-        full_address,  # 合体した住所
+        full_address,
         form_data.get("phone", ""),
         form_data.get("email", ""),
         form_data.get("sns_account", ""),
-        form_data.get("school_grade", ""),
+        form_data.get("school_info", ""),    # キー名を school_info に統一
+        form_data.get("usage_purpose", ""),  # 使用用途を追加
         form_data.get("other", ""),
     ]
     worksheet.append_row(new_row, value_input_option="USER_ENTERED")
@@ -854,9 +853,6 @@ def handle_message(event: MessageEvent):
 
 
 def send_catalog_info(event: MessageEvent):
-    """
-    カタログ案内メッセージ
-    """
     reply_text = (
         "🎁➖➖➖➖➖➖➖➖🎁\n"
         "  ✨カタログ無料プレゼント✨\n"
@@ -873,19 +869,16 @@ def send_catalog_info(event: MessageEvent):
         "フォロー後、下記のフォームからお申込みください👇\n"
         "📩 カタログ申込みフォーム\n"
         "https://catalog-bot-1.onrender.com/catalog_form\n"
-        "⚠️ 注意：サブアカウントや重複申込みはご遠慮ください。\n\n"
+        "⚠️ 注意：サブアカウントや重複申込みはご遠慮ください。\n"
+        "⚠️ 注意：住所や氏名等に不備がある場合はお届けができません。\n\n"
         "【カタログ発送時期】\n"
-        "📅 2025年4月中旬より郵送で発送予定です。\n\n"
+        "📅 2026年4月中旬より郵送で発送予定です。\n\n"
         "【配布数について】\n"
         "先着300名様分を予定しています。\n"
         "※応募多数となった場合、配布数の増加や抽選となる可能性があります。\n\n"
         "ご応募お待ちしております🙆"
     )
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=reply_text)
-    )
-
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
 # -----------------------
 # 見積りフロー
@@ -1163,8 +1156,6 @@ def process_estimate_flow(event: MessageEvent, user_message: str):
 def show_catalog_form():
     token = str(uuid.uuid4())
     session['catalog_form_token'] = token
-
-    # f-string で {token} を差し込む
     html_content = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -1172,49 +1163,31 @@ def show_catalog_form():
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>カタログ申込フォーム</title>
     <style>
-        body {{
-            margin: 0;
-            padding: 0;
-            font-family: sans-serif;
-        }}
-        .container {{
-            max-width: 600px; 
-            margin: 0 auto;
-            padding: 1em;
-        }}
-        label {{
-            display: block;
-            margin-bottom: 0.5em;
-        }}
-        input[type=text], input[type=email], textarea {{
-            width: 100%;
-            padding: 0.5em;
-            margin-top: 0.3em;
-            box-sizing: border-box;
-        }}
-        input[type=submit] {{
-            padding: 0.7em 1em;
-            font-size: 1em;
-            margin-top: 1em;
-        }}
+        body {{ margin: 0; padding: 0; font-family: sans-serif; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 1em; }}
+        label {{ display: block; margin-bottom: 0.5em; }}
+        input[type=text], input[type=email], textarea {{ width: 100%; padding: 0.5em; margin-top: 0.3em; box-sizing: border-box; }}
+        input[type=submit] {{ padding: 0.7em 1em; font-size: 1em; margin-top: 1em; cursor: pointer; }}
+        input[type=submit]:disabled {{ background: #ccc; cursor: not-allowed; }}
     </style>
     <script>
+    function preventDoubleSubmission() {{
+        const submitButton = document.getElementById('submit-btn');
+        submitButton.disabled = true;
+        submitButton.value = "送信中...";
+        return true;
+    }}
     async function fetchAddress() {{
         let pcRaw = document.getElementById('postal_code').value.trim();
         pcRaw = pcRaw.replace('-', '');
-        if (pcRaw.length < 7) {{
-            return;
-        }}
+        if (pcRaw.length < 7) return;
         try {{
             const response = await fetch(`https://api.zipaddress.net/?zipcode=${{pcRaw}}`);
             const data = await response.json();
             if (data.code === 200) {{
-                // 都道府県・市区町村 部分だけを address_1 に自動入力
                 document.getElementById('address_1').value = data.data.fullAddress;
             }}
-        }} catch (error) {{
-            console.log("住所検索失敗:", error);
-        }}
+        }} catch (error) {{ console.log("住所検索失敗:", error); }}
     }}
     </script>
 </head>
@@ -1222,55 +1195,23 @@ def show_catalog_form():
     <div class="container">
       <h1>カタログ申込フォーム</h1>
       <p>以下の項目をご記入の上、送信してください。</p>
-      <form action="/submit_form" method="post">
-          <!-- ワンタイムトークン -->
+      <form action="/submit_form" method="post" onsubmit="return preventDoubleSubmission()">
           <input type="hidden" name="form_token" value="{token}">
-
-          <label>氏名（必須）:
-              <input type="text" name="name" required>
-          </label>
-
-          <label>郵便番号（必須）:<br>
-              <small>※自動で住所補完します。(ブラウザの場合)</small><br>
-              <input type="text" name="postal_code" id="postal_code" onkeyup="fetchAddress()" required>
-          </label>
-
-          <label>都道府県・市区町村（必須）:<br>
-              <small>※郵便番号入力後に自動補完されます。修正が必要な場合は上書きしてください。</small><br>
-              <input type="text" name="address_1" id="address_1" required>
-          </label>
-
-          <label>番地・部屋番号など（必須）:<br>
-              <small>※カタログ送付のために番地や部屋番号を含めた完全な住所の記入が必要です</small><br>
-              <input type="text" name="address_2" id="address_2" required>
-          </label>
-
-          <label>電話番号（必須）:
-              <input type="text" name="phone" required>
-          </label>
-
-          <label>メールアドレス（必須）:
-              <input type="email" name="email" required>
-          </label>
-
-          <label>Insta・TikTok名（必須）:
-              <input type="text" name="sns_account" required>
-          </label>
-
-          <label>2025年度に在籍予定の学校名と学年（未記入可）:
-              <input type="text" name="school_grade">
-          </label>
-
-          <label>その他（質問やご要望など）:
-              <textarea name="other" rows="4"></textarea>
-          </label>
-
-          <input type="submit" value="送信">
+          <label>氏名（必須）: <input type="text" name="name" required></label>
+          <label>郵便番号（必須）:<br><input type="text" name="postal_code" id="postal_code" onkeyup="fetchAddress()" required></label>
+          <label>都道府県・市区町村（必須）:<br><input type="text" name="address_1" id="address_1" required></label>
+          <label>番地・部屋番号など（必須）:<br><input type="text" name="address_2" id="address_2" required></label>
+          <label>電話番号（必須）: <input type="text" name="phone" required></label>
+          <label>メールアドレス（必須）: <input type="email" name="email" required></label>
+          <label>Insta・TikTok名（必須）: <input type="text" name="sns_account" required></label>
+          <label>2026年度に在籍予定の学校名・学年・クラス（未記入可）: <input type="text" name="school_info"></label>
+          <label>カタログの使用用途（例：体育祭・文化祭・部活など）: <input type="text" name="usage_purpose"></label>
+          <label>その他: <textarea name="other" rows="4"></textarea></label>
+          <input type="submit" id="submit-btn" value="送信">
       </form>
     </div>
 </body>
-</html>
-"""
+</html>"""
     return render_template_string(html_content)
 
 
@@ -1279,30 +1220,30 @@ def show_catalog_form():
 # -----------------------
 @app.route("/submit_form", methods=["POST"])
 def submit_catalog_form():
-    # トークンチェック
     form_token = request.form.get('form_token')
     if form_token != session.get('catalog_form_token'):
         return "二重送信、あるいは不正なリクエストです。", 400
 
-    # トークンの使い捨て
     session.pop('catalog_form_token', None)
-
-    # フォームから受け取ったデータを辞書に格納
     form_data = {
         "name": request.form.get("name", "").strip(),
         "postal_code": request.form.get("postal_code", "").strip(),
-        "address_1": request.form.get("address_1", "").strip(),  # 都道府県・市区町村
-        "address_2": request.form.get("address_2", "").strip(),  # 番地・部屋番号
+        "address_1": request.form.get("address_1", "").strip(),
+        "address_2": request.form.get("address_2", "").strip(),
         "phone": request.form.get("phone", "").strip(),
         "email": request.form.get("email", "").strip(),
         "sns_account": request.form.get("sns_account", "").strip(),
-        "school_grade": request.form.get("school_grade", "").strip(),
+        "school_info": request.form.get("school_info", "").strip(),
+        "usage_purpose": request.form.get("usage_purpose", "").strip(),
         "other": request.form.get("other", "").strip(),
     }
 
     try:
-        # スプレッドシートへの書き込み（例）
         write_to_spreadsheet_for_catalog(form_data)
+    except ValueError as ve:
+        if str(ve) == "ALREADY_REGISTERED":
+            return "このメールアドレスは既に登録されています。重複申込みはご遠慮ください。", 400
+        return f"エラーが発生しました: {ve}", 500
     except Exception as e:
         return f"エラーが発生しました: {e}", 500
 
