@@ -54,10 +54,10 @@ def get_or_create_worksheet(sheet, title):
         ws = sheet.worksheet(title)
     except gspread.exceptions.WorksheetNotFound:
         ws = sheet.add_worksheet(title=title, rows=2000, cols=20)
-        # シート名を CatalogRequests に統一（または両方 2026 にする）
         if title == "CatalogRequests":
-            ws.update('A1:I1', [[
-                "氏名", "郵便番号", "住所", "電話番号",
+            # A 列に「日時」を追加し、J 列（10列目）まで範囲を拡大
+            ws.update('A1:J1', [[
+                "日時", "氏名", "郵便番号", "住所", "電話番号",
                 "メールアドレス", "Insta/TikTok名",
                 "在籍予定の学校名・学年・クラス", "使用用途", "その他(質問・要望)"
             ]])
@@ -79,16 +79,20 @@ def write_to_spreadsheet_for_catalog(form_data: dict):
     sh = gc.open_by_key(SPREADSHEET_KEY)
     worksheet = get_or_create_worksheet(sh, "CatalogRequests")
 
+    # A 列に入れるための現在日時を生成
+    now_str = time.strftime("%Y/%m/%d %H:%M:%S")
+
     new_row = [
-        form_data.get("name", ""),
-        form_data.get("postal_code", ""),
-        form_data.get("address", ""),
-        form_data.get("phone", ""),
-        form_data.get("email", ""),
-        form_data.get("sns_account", ""),    # ←【追加】これがないと後ろのデータがズレます
-        form_data.get("school_info", ""),    # キー名を school_info に修正
-        form_data.get("usage_purpose", ""),  # 使用用途を追加
-        form_data.get("other", ""),
+        now_str,                             # A列: 日時
+        form_data.get("name", ""),           # B列: 氏名
+        form_data.get("postal_code", ""),    # C列: 郵便番号
+        form_data.get("address", ""),        # D列: 住所
+        form_data.get("phone", ""),          # E列: 電話番号
+        form_data.get("email", ""),          # F列: メールアドレス
+        form_data.get("sns_account", ""),    # G列: Insta/TikTok名
+        form_data.get("school_info", ""),    # H列: 学校名・学年・クラス
+        form_data.get("usage_purpose", ""),  # I列: 使用用途
+        form_data.get("other", ""),          # J列: その他
     ]
     worksheet.append_row(new_row, value_input_option="USER_ENTERED")
 
