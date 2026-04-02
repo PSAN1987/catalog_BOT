@@ -72,27 +72,32 @@ def get_or_create_worksheet(sheet, title):
 
 
 def write_to_spreadsheet_for_catalog(form_data: dict):
-    """
-    カタログ請求フォーム送信のデータをスプレッドシートに1行追加する
-    """
     gc = get_gspread_client()
     sh = gc.open_by_key(SPREADSHEET_KEY)
     worksheet = get_or_create_worksheet(sh, "CatalogRequests")
 
-    # A 列に入れるための現在日時を生成
-    now_str = time.strftime("%Y/%m/%d %H:%M:%S")
+    # --- 重複チェック開始 ---
+    # F列（メールアドレス）の全データを取得
+    email_list = worksheet.col_values(6) 
+    new_email = form_data.get("email", "").strip()
 
+    if new_email in email_list:
+        # 既に登録がある場合は、独自のエラーを発生させる
+        raise ValueError("ALREADY_REGISTERED")
+    # --- 重複チェック終了 ---
+
+    now_str = time.strftime("%Y/%m/%d %H:%M:%S")
     new_row = [
-        now_str,                             # A列: 日時
-        form_data.get("name", ""),           # B列: 氏名
-        form_data.get("postal_code", ""),    # C列: 郵便番号
-        form_data.get("address", ""),        # D列: 住所
-        form_data.get("phone", ""),          # E列: 電話番号
-        form_data.get("email", ""),          # F列: メールアドレス
-        form_data.get("sns_account", ""),    # G列: Insta/TikTok名
-        form_data.get("school_info", ""),    # H列: 学校名・学年・クラス
-        form_data.get("usage_purpose", ""),  # I列: 使用用途
-        form_data.get("other", ""),          # J列: その他
+        now_str,
+        form_data.get("name", ""),
+        form_data.get("postal_code", ""),
+        form_data.get("address", ""),
+        form_data.get("phone", ""),
+        form_data.get("email", ""),
+        form_data.get("sns_account", ""),
+        form_data.get("school_info", ""),
+        form_data.get("usage_purpose", ""),
+        form_data.get("other", ""),
     ]
     worksheet.append_row(new_row, value_input_option="USER_ENTERED")
 
@@ -939,48 +944,31 @@ def show_catalog_form():
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>カタログ申し込みフォーム</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: sans-serif;
-        }
-        .container {
-            max-width: 600px; 
-            margin: 0 auto;
-            padding: 1em;
-        }
-        label {
-            display: block;
-            margin-bottom: 0.5em;
-        }
-        input[type=text], input[type=email], textarea {
-            width: 100%;
-            padding: 0.5em;
-            margin-top: 0.3em;
-            box-sizing: border-box;
-        }
-        input[type=submit] {
-            padding: 0.7em 1em;
-            font-size: 1em;
-            margin-top: 1em;
-        }
+        body { margin: 0; padding: 0; font-family: sans-serif; }
+        .container { max-width: 600px; margin: 0 auto; padding: 1em; }
+        label { display: block; margin-bottom: 0.5em; }
+        input[type=text], input[type=email], textarea { width: 100%; padding: 0.5em; margin-top: 0.3em; box-sizing: border-box; }
+        input[type=submit] { padding: 0.7em 1em; font-size: 1em; margin-top: 1em; cursor: pointer; }
+        input[type=submit]:disabled { background: #ccc; cursor: not-allowed; }
     </style>
     <script>
+    function preventDoubleSubmission() {
+        const submitButton = document.getElementById('submit-btn');
+        submitButton.disabled = true;
+        submitButton.value = "送信中...";
+        return true;
+    }
     async function fetchAddress() {
         let pcRaw = document.getElementById('postal_code').value.trim();
         pcRaw = pcRaw.replace('-', '');
-        if (pcRaw.length < 7) {
-            return;
-        }
+        if (pcRaw.length < 7) return;
         try {
             const response = await fetch(`https://api.zipaddress.net/?zipcode=${pcRaw}`);
             const data = await response.json();
             if (data.code === 200) {
                 document.getElementById('address').value = data.data.fullAddress;
             }
-        } catch (error) {
-            console.log("住所検索失敗:", error);
-        }
+        } catch (error) { console.log("住所検索失敗:", error); }
     }
     </script>
 </head>
@@ -988,45 +976,36 @@ def show_catalog_form():
     <div class="container">
       <h1>カタログ申し込みフォーム</h1>
       <p>以下の項目をご記入の上、送信してください。</p>
-      <form action="/submit_form" method="post">
+      <form action="/submit_form" method="post" onsubmit="return preventDoubleSubmission()">
           <label>氏名（必須）:
               <input type="text" name="name" required>
           </label>
-
           <label>郵便番号（必須）:<br>
-              <small>※ハイフン無し7桁で入力すると自動で住所補完します</small><br>
+              <small>※ハイフン無し7桁で自動補完</small><br>
               <input type="text" name="postal_code" id="postal_code" onkeyup="fetchAddress()" required>
           </label>
-
           <label>住所（必須）:
               <input type="text" name="address" id="address" required>
           </label>
-
           <label>電話番号（必須）:
               <input type="text" name="phone" required>
           </label>
-
           <label>メールアドレス（必須）:
               <input type="email" name="email" required>
           </label>
-
           <label>Insta・TikTok名（必須）:
               <input type="text" name="sns_account" required>
           </label>
-
-          <label>2026年度に在籍予定の学校名・学年・クラス（未記入可）:
+          <label>2026年度に在籍予定の学校名・学年・クラス:
               <input type="text" name="school_info">
           </label>
-
-          <label>カタログの使用用途（例：体育祭・文化祭・部活など）:
+          <label>カタログの使用用途:
               <input type="text" name="usage_purpose">
           </label>
-
-          <label>その他（質問やご要望など）:
+          <label>その他:
               <textarea name="other" rows="4"></textarea>
           </label>
-
-          <input type="submit" value="送信">
+          <input type="submit" id="submit-btn" value="送信">
       </form>
     </div>
 </body>
@@ -1054,6 +1033,10 @@ def submit_catalog_form():
 
     try:
         write_to_spreadsheet_for_catalog(form_data)
+    except ValueError as ve:
+        if str(ve) == "ALREADY_REGISTERED":
+            return "このメールアドレスは既に登録されています。重複申込みはご遠慮ください。", 400
+        return f"エラーが発生しました: {ve}", 500
     except Exception as e:
         return f"エラーが発生しました: {e}", 500
 
