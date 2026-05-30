@@ -845,7 +845,7 @@ def handle_message(event: MessageEvent):
         return
 
     # カタログ案内 (トリガー例: "キャンペーン" or "catalog" など含む場合)
-    if "キャンペーン" in user_message or "catalog" in user_message.lower():
+    if "#キャンペーン" in user_message or "catalog" in user_message.lower():
         send_catalog_info(event)
         return
 
